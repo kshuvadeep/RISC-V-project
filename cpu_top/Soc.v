@@ -3,6 +3,9 @@
 
 //`include "Global_defines.vh"
 
+`include "cpu_core.v"
+`include "Mem_top.v"
+
 module SOC #(parameter MEM_DEPTH=8 ,parameter DATA_WIDTH=32)
    (
 	input clk ,
