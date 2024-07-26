@@ -1,0 +1,40 @@
+Hello good morning on 26th July 
+
+Today is a good day and on this auspicious ceremony , I am starting my RISC -v project ,for which left my job and took a break before we move out to other country and company  to seek a new chapter of togetherness .
+Anyway , So ,here's the plan of development .ofcourse this plan is based on the assumption that i resolve the fpga issues earlier and no further issues come ,which ofcourse will come . Let's see .Here is a basic plan . 
+
+1.Phase 1 : 
+
+  Development of complete risc -v RVI32 support 
+  basic interface development  ( LCD , Uart for output and input )
+  5 stage pipeline 
+  basic verification enviroment development 
+  Synthesis in FPGA as well for IC level 
+
+ (Deadline : 15h August )
+  breakup 
+  
+  ML1 : development of a basic working cpu core ( 1 WW -> spill ?) [ 31st july ]
+  ML2 : interface development like UART and LCD .(1 WW) [ 6th august ]
+  ML3: Piplelining to 5 stage ( 1 WW)  ,syntheis [ 15h august ] 
+
+2. Phase 2 : Linux boot support and booting linux (15th october)
+             performance model development 
+             tapeout readiness of the core in efabless 
+
+  [ milestones to cover later]
+
+3. Phase 3 : use this core in some kind of application as an embedded application along with MCU or raspberry pi cores . 
+  or develop out of order architecture and evaluate performance gains from it .[ october to december ]  
+
+        automatic watering machine , some kind of vision application etc 
+
+
+    
+
+             
+             
+   
+  
+     
+ 
