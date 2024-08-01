@@ -25,7 +25,8 @@ module ArchRegistersInt(
        //p2
          input[4:0] addr_p2,
 	 input we_p2,
-	 input[31:0] din_p2
+	 input[31:0] din_p2,
+	 output ReadWriteConflict;
  );
 
     // registers 
@@ -34,13 +35,15 @@ module ArchRegistersInt(
    reg[31:0] dout_p0_reg ,dout_p1_reg;
  
    wire re_p0_reg,re_p1_reg,we_p2_reg;
+   wire ReadP0Conflict,ReadP1Conflict;
 
    //conflict detector 
+  assign ReadP0Conflict=(addr_p0==addr_p2) & re_p0 & we_p2;
+  assign ReadP1Conflict =(addr_p1==addr_p2) & re_p1 & we_p2;
 
-   assign re_p0_reg = (addr_p0==addr_p2) ? 1'b0:re_p0;
-   assign re_p1_reg = (addr_p1==addr_p2) ? 1'b0:re_p1;
-
-
+   assign re_p0_reg = ReadP0Conflict ? 1'b0:re_p0;
+   assign re_p1_reg =  ReadP1Conflict  ? 1'b0:re_p1;
+   assign ReadWriteConflict= ReadP0Conflict | ReadP1Conflict ;
 
    //behavioral design (may need to code it structurally in order to meet
    //timing 
