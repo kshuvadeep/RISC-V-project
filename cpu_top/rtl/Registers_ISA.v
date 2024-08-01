@@ -26,7 +26,7 @@ module ArchRegistersInt(
          input[4:0] addr_p2,
 	 input we_p2,
 	 input[31:0] din_p2,
-	 output ReadWriteConflict;
+	 output ReadWriteConflict
  );
 
     // registers 
