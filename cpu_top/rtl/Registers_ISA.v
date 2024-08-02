@@ -6,33 +6,52 @@
 // first stalling the decoder and subsequently the pipeline  for 1 cyle 
 // We design this registers of 32 x32 as a FF based design becuase of speed 
 // we cannot match the speed with such a 3 port register file . the area it
-// save is not worth it considering the speed and power tradeoffs 
-//
+// save is not worth it considering the speed and power tradeoffs
+//*********************************** 
+//Another invalidaiton port will be required to invalidate an register when it
+//is a destination register for the instruction. It will be written one cycle
+//later the source operand read in order to avoild the read write conflict 
+//for a:a+15 kind of instructions 
+//Plese note invalidation will only work on the valid bit array 
+//***************************************
+
 `include "register_defines.vh"
 module ArchRegistersInt(
 
 	input clk ,
 	input reset ,
 
-        //p0 
+        //p0 read port1 
 	input[4:0] addr_p0,
 	input re_p0,
 	output[31:0] dout_p0,
-        //p1 
+	output v_p0,
+        //p1 read port2
 	input[4:0] addr_p1,
         input re_p1,
         output[31:0] dout_p1,
-       //p2
+	output v_p1, 
+       //p2 WB port 
          input[4:0] addr_p2,
 	 input we_p2,
 	 input[31:0] din_p2,
-	 output ReadWriteConflict
+	//Pi , invalidation port
+	input we_pi,
+	input[4:0] addr_pi,
+	  
+
+	 output source_not_ready
  );
 
-    // registers 
+    // registers :
    reg[31:0] zero,ra,sp,gp,tp,t0,t1,t2,t3,t4,t5,t6,s0,s1;
    reg[31:0] a0,a1,a2,a3,a4,a5,a6,a7,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11;
    reg[31:0] dout_p0_reg ,dout_p1_reg;
+
+
+   //registers valid array
+   reg[31:0] V_array ; 
+   reg v_p0_reg,v_p1_reg;
  
    wire re_p0_reg,re_p1_reg,we_p2_reg;
    wire ReadP0Conflict,ReadP1Conflict;
@@ -175,12 +194,63 @@ module ArchRegistersInt(
     endcase
    end
         
-  end // always block 
+  end // always block
+
+   //valid array 
+
+  always@(posedge clk)
+  begin 
+     if(reset)
+     begin
+	    V_array=31'h00000000;
+     end 
+     //p0 read valid array
+     if(re_p0_reg)
+     begin
+	    v_p0_reg=V_array[addr_p0];
+     end 
+        else begin  v_p0_reg=1'b0; end 
+     //p1 read valid array
+
+      if(re_p1_reg)
+     begin
+	    v_p1_reg=V_array[addr_p1];
+     end 
+    
+     else begin  v_p1_reg=1'b0; end
+
+    //write ports
+    if(addr_pi==addr_p2 & we_p2 & we_pi) 
+    begin 
+       V_array[addr_pi]=1'b0; 
+      //incase of a conflict , invalidation gets prioriry as 
+      //there is no consumer of that WB data ,think of a case and 
+      //document it  
+       end 
+
+       else begin 
+
+      if(we_p2)
+      begin 
+        V_array[addr_p2]=1'b1;
+      end 
+     //invalidation 
+      if(we_pi)  
+      begin 
+          V_array[addr_pi]=1'b0;
+       end 
+     end 
+  end //always block for valid array 
+     
 
 
 
-  assign dout_p0=dout_p0_reg;
-  assign dout_p1 =dout_p1_reg;
+  assign dout_p0 =ReadP0Conflict ? din_p2:dout_p0_reg;  // data forwarding in case of write back on the same register 
+  assign dout_p1 =ReadP1Conflict? din_p2:dout_p1_reg;
+  assign v_p0=ReadP0Conflict ? 1'b1:v_p0_reg;
+  assign v_p1=ReadP1Conflict? 1'b1:v_p1_reg;
+   assign   source_not_ready = (re_p0 ^ v_p0 )  | (re_p1 ^ v_p1 ) ;  // if any of source operands are not ready  
+
 
 
   endmodule 
