@@ -18,12 +18,16 @@
 //****************************************************************
 
 //*******************************************
-//Register Naming convention 
-// SRC1_ADDER_EXE01 : defines the source of adder unit and EXEO1 
+//signal Naming convention 
+// add_value_exe01 : denotes the output of adder unit and EXEO1 
 // denotes that it captures the signals that belong to stage 1 of the 
 // pipeline 
 
 `define DATA_WIDTH 32 
+`define "system_param.vh"
+`define "rvi32_instructions.vh"
+`define "Execution_param.vh"
+`define "Macros.vh"
 
 
 module execution(
@@ -36,29 +40,81 @@ module execution(
       input[`DATA_WIDTH-1:0] data_src1,
       input[`DATA_WIDTH-1:0]  data_src2,
       //outputs 
-      output[`DATA_WIDTH-1:0] Execution_Result,
-      output [`ADDR_WIDTH-1:0] Mem_addr,
-      output uop_is_mem ,
+      output [`DATA_WIDTH-1:0] Execution_Result,
+      output reg Result_valid,
+     //* Mem to be implemented later 
+     // output [`ADDR_WIDTH-1:0] Mem_addr,
+     // output uop_is_mem ,  
       //
       input clk ,
       input reset 
       );
 
-
+      wire[`DATA_WIDTH-1:0] add_value_exe01,logical_value_exe01; 
+      reg[`DATA_WIDTH-1:0] Execution_Result_exe01,Execution_Result_exe02; 
+      wire result_valid_exe01; 
 
       //Registers
       //
 
+      //Control Unit  
+      Alu_ctrl u_Alu_ctrl (
+    .instruction_type(instruction_type),
+    .funct3(funct3),
+    .funct7(funct7),
+    .clk(clk),
+    .reset(reset),
+    .ctrl_adder(ctrl_adder),
+    .uop_is_add(uop_is_add),
+    .ctrl_logic(ctrl_logic),
+    .uop_is_logic(uop_is_logic)
+       ); 
+  
+      //execution units or datapath units 
       
-      
+     //logic unit  
+       logical_unit u_logical_unit (
+    .clk(clk),
+    .reset(reset),
+    .logic_type(logic_type),
+    .src1(data_src1),
+    .src2(data_src2),
+    .immediate(immediate),
+    .logical_value(logical_value_exe01)
+     );
+
+     //Adder unit 
+     Adder_int u_Adder_int (
+        .clk(clk), 
+        .reset(reset),
+        .add_type(add_type),
+        .src1(data_src1),
+        .src2(data_src2),
+        .immediate(immediate),
+        .add_value(add_value_exe01)
+    );
+   
+       //Datapath Muxing
+
+         always@(*)
+         begin 
+            if(uop_is_add)
+            begin 	Execution_Result_exe01=add_value_exe01; end 
+            else if(uop_is_logic) 
+            begin 	Execution_Result_exe01=logical_value_exe01; end 
+          end // always block  
        
+      assign result_valid_exe01 =(uop_is_add | uop_is_logic) ;
+
+       //Flop the result for staging to WB 
+         `POS_EDGE_FF(clk,reset, Execution_Result_exe01,Execution_Result_exe02);
+         `POS_EDGE_FF(clk,reset,result_valid_exe01,Result_valid_);
 
 
-
-       
-     
+      assign  Execution_result=Execution_Result_exe02;
+  
       
 
       
 
-	
+ endmodule 	
