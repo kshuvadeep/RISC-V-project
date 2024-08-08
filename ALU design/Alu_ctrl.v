@@ -13,9 +13,9 @@ module Alu_ctrl(
      input clk ,
      input reset,
      //outputs 
-     output reg[1:0] ctrl_adder,  //adder datapath control 
+     output reg[`CTRL_ADD_WIDTH-1:0] ctrl_adder,  //adder datapath control 
      output reg uop_is_add,
-     output reg[2:0] ctrl_logic , //logic unit ctrl 
+     output reg[`CTRL_LOGIC_WIDTH-1:0] ctrl_logic , //logic unit ctrl 
     output reg uop_is_logic 
      ); 
 
@@ -25,12 +25,12 @@ module Alu_ctrl(
       begin 
        if(reset)
        begin 
-         ctrl_adder={`CTRL_ADD_WIDTH{1'b0}); 
+         ctrl_adder={`CTRL_ADD_WIDTH{1'b0}}; 
          ctrl_logic={`CTRL_LOGIC_WIDTH{1'b0}};
        end 
          // adder ctrl logic 
          
-        if(instruction_type==`R_TYPE_OP && funct3=`R_ADD)
+        if(instruction_type==`R_TYPE_OP && funct3==`R_ADD)
          begin 
           uop_is_add =1'b1;
            if(funct7[5]==1'b0)
@@ -40,12 +40,12 @@ module Alu_ctrl(
            else if(funct7[5]==1'b1)
               begin ctrl_adder=`CTRL_SUB ; end // substraction 
           end 
-         else if(instruction_type==`I_TYPE_OP && funct3=`I_ADD) 
+         else if(instruction_type==`I_TYPE_OP && funct3==`I_ADD) 
             begin 
               uop_is_add =1'b1;
 		ctrl_adder=`CTRL_ADDI;
              end
-         else begin   uop_is_add=1'b0;  ctrl_adder={`CTRL_ADD_WIDTH{1'b0}); end 
+         else begin   uop_is_add=1'b0;  ctrl_adder={`CTRL_ADD_WIDTH{1'b0}}; end 
 
          // logic ctrl  
            
@@ -55,7 +55,7 @@ module Alu_ctrl(
              `R_OR: begin ctrl_logic = `CTRL_OR; end
              `R_XOR :begin ctrl_logic=`CTRL_XOR; end 
               `R_AND:begin ctrl_logic=`CTRL_AND; end
-              defualt : begin ctrl_logic ={`CTRL_LOGIC_WIDTH{1'b0}};
+              default : begin ctrl_logic = {`CTRL_LOGIC_WIDTH{1'b0}}; end 
              endcase 
             end
 
@@ -65,11 +65,11 @@ module Alu_ctrl(
              `I_ORI: begin ctrl_logic = `CTRL_ORI; end
              `I_XORI :begin ctrl_logic=`CTRL_XORI; end 
               `I_ANDI :begin ctrl_logic=`CTRL_ANDI; end
-              defualt : begin ctrl_logic ={`CTRL_LOGIC_WIDTH{1'b0}};
+              default : begin ctrl_logic ={`CTRL_LOGIC_WIDTH{1'b0}}; end 
              endcase 
             end 
  
-            uop_is_logic = (|ctrl_logic); // the encoding is done in such a way 
+            uop_is_logic = (| ctrl_logic); // the encoding is done in such a way 
  
       end //always block
 

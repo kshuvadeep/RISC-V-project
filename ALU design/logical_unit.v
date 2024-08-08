@@ -1,14 +1,7 @@
 
-
+`include "system_param.vh"
 `include "Execution_param.vh"
-`include "vi32_instructions.vh"
-`define CTRL_XOR 3'b000
-`define CTRL_OR 3'b001
-`define CTRL_AND 3'b010
-`define CTRL_ANDI 3'b101
-`define CTRL_XORI 3'b111
-`define CTRL_ORI 3'b110
-`define MSB_CTRL 2
+`include "rvi32_instructions.vh"
 
 module logical_unit 
 (
@@ -18,29 +11,29 @@ module logical_unit
     //control 
     input [2:0] logic_type,
     // source         
-    input [DATA_WIDTH-1:0] src1,
-    input [DATA_WIDTH-1:0] src2,
+    input [`DATA_WIDTH-1:0] src1,
+    input [`DATA_WIDTH-1:0] src2,
     input [20:0] immediate,
     // output 
-    output [DATA_WIDTH-1:0] logical_value
+    output [`DATA_WIDTH-1:0] logical_value
 );
 
-    reg [DATA_WIDTH-1:0] logical_src1, logical_src2;
-    wire [DATA_WIDTH-1:0] logical_src2_inp;
-    reg [DATA_WIDTH-1:0] logical_value_reg;
+    reg [`DATA_WIDTH-1:0] logical_src1, logical_src2;
+    wire [`DATA_WIDTH-1:0] logical_src2_inp;
+    reg [`DATA_WIDTH-1:0] logical_value_reg;
 
-    wire [DATA_WIDTH-1:0] And_result, Or_result, Xor_result;
+    wire [`DATA_WIDTH-1:0] And_result, Or_result, Xor_result;
 
     //source selection for rs2 based on the MSB of the control input 
-    assign logical_src2_inp = logic_type[`MSB_CTRL] ? {{(DATA_WIDTH-21){1'b0}}, immediate} : src2;
+    assign logical_src2_inp = logic_type[`MSB_CTRL] ? {{(`DATA_WIDTH-21){1'b0}}, immediate} : src2;
 
     always@(posedge clk)
     begin 
         if(reset)
         begin 
-            logical_src1 = {DATA_WIDTH{1'b0}};
-            logical_src2 = {DATA_WIDTH{1'b0}};
-            logical_value_reg = {DATA_WIDTH{1'b0}};
+            logical_src1 = {`DATA_WIDTH{1'b0}};
+            logical_src2 = {`DATA_WIDTH{1'b0}};
+            logical_value_reg = {`DATA_WIDTH{1'b0}};
         end 
         else begin
             logical_src1 = src1;
@@ -62,7 +55,7 @@ module logical_unit
             `CTRL_ANDI :  logical_value_reg = And_result;
              `CTRL_ORI:    logical_value_reg = Or_result;
             `CTRL_XORI:  logical_value_reg = Xor_result;
-            default:                logical_value_reg = {DATA_WIDTH{1'b0}};
+            default:                logical_value_reg = {`DATA_WIDTH{1'b0}};
         endcase
     end 
 

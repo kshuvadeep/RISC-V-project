@@ -23,11 +23,14 @@
 // denotes that it captures the signals that belong to stage 1 of the 
 // pipeline 
 
-`define DATA_WIDTH 32 
-`define "system_param.vh"
-`define "rvi32_instructions.vh"
-`define "Execution_param.vh"
-`define "Macros.vh"
+`include "system_param.vh"
+`include "rvi32_instructions.vh"
+`include "Execution_param.vh"
+`include "Macros.vh"
+//Execution Units 
+`include "Alu_ctrl.v"  
+`include "logical_unit.v"  
+`include "Adder_int.v"  
 
 
 module execution(
@@ -52,7 +55,11 @@ module execution(
 
       wire[`DATA_WIDTH-1:0] add_value_exe01,logical_value_exe01; 
       reg[`DATA_WIDTH-1:0] Execution_Result_exe01,Execution_Result_exe02; 
-      wire result_valid_exe01; 
+      wire result_valid_exe01;
+      wire [`CTRL_LOGIC_WIDTH-1:0] ctrl_logic ;
+      wire [`CTRL_ADD_WIDTH-1:0] ctrl_adder ;
+      wire uop_is_logic,uop_is_add;
+       
 
       //Registers
       //
@@ -76,7 +83,7 @@ module execution(
        logical_unit u_logical_unit (
     .clk(clk),
     .reset(reset),
-    .logic_type(logic_type),
+    .logic_type(ctrl_logic),
     .src1(data_src1),
     .src2(data_src2),
     .immediate(immediate),
@@ -87,7 +94,7 @@ module execution(
      Adder_int u_Adder_int (
         .clk(clk), 
         .reset(reset),
-        .add_type(add_type),
+        .add_type(ctrl_adder),
         .src1(data_src1),
         .src2(data_src2),
         .immediate(immediate),
@@ -107,8 +114,8 @@ module execution(
       assign result_valid_exe01 =(uop_is_add | uop_is_logic) ;
 
        //Flop the result for staging to WB 
-         `POS_EDGE_FF(clk,reset, Execution_Result_exe01,Execution_Result_exe02);
-         `POS_EDGE_FF(clk,reset,result_valid_exe01,Result_valid_);
+         `POS_EDGE_FF(clk,reset, Execution_Result_exe01,Execution_Result_exe02)
+         `POS_EDGE_FF(clk,reset,result_valid_exe01,Result_valid)
 
 
       assign  Execution_result=Execution_Result_exe02;
