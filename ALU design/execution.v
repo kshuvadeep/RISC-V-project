@@ -104,21 +104,26 @@ module execution(
        //Datapath Muxing
 
          always@(*)
-         begin 
+         begin
+            if(reset)
+            begin 
+		Execution_Result_exe01={`DATA_WIDTH{1'b0}};
+            end 
+             
             if(uop_is_add)
             begin 	Execution_Result_exe01=add_value_exe01; end 
             else if(uop_is_logic) 
             begin 	Execution_Result_exe01=logical_value_exe01; end 
           end // always block  
        
-      assign result_valid_exe01 =(uop_is_add | uop_is_logic) ;
+      assign result_valid_exe01 =(uop_is_add| uop_is_logic) ;
 
        //Flop the result for staging to WB 
          `POS_EDGE_FF(clk,reset, Execution_Result_exe01,Execution_Result_exe02)
          `POS_EDGE_FF(clk,reset,result_valid_exe01,Result_valid)
 
 
-      assign  Execution_result=Execution_Result_exe02;
+      assign  Execution_Result=Execution_Result_exe02;
   
       
 

@@ -6,9 +6,9 @@
 // Decoder will inititate stall signal to halt the system 
 
 `include "rvi32_instructions.vh"
-`define INST_WIDTH 32 
+`include "system_param.vh"
 // for 32 architectural register 
-`define REG_ADDR_WIDTH 5  
+  
 
 module decoder(
 
