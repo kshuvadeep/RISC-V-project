@@ -14,11 +14,12 @@ module WriteBack(
             //dest register 
             input[`REG_ADDR_WIDTH-1:0] Rd_decode, //coming from decode stage 
             input[`DATA_WIDTH-1:0] Execution_Result ,
-            input Reset_Valid,
+            input Result_Valid,
             //clk ,reset
             input clk , reset ,
             //output 
              output reg[`REG_ADDR_WIDTH-1:0] WrtBck_Addr,
+             output reg[`DATA_WIDTH-1:0] WrtBck_Data,
              output reg Wr_En 
            );
 
@@ -30,19 +31,21 @@ module WriteBack(
             // as it comes from decode stage  
 
              `POS_EDGE_FF(clk,reset,Rd_decode,Rd_wb_exe01)
-             `POS_EDGE_FF(clk,reset,Rd_,Rd_wb_exe01,Rd_wb_exe02)
+             `POS_EDGE_FF(clk,reset,Rd_wb_exe01,Rd_wb_exe02)
 
              always@(posedge clk)
               begin 
                 if(reset)
                  begin 
                    WrtBck_Addr={`REG_ADDR_WIDTH{1'b0}};
+                   WrtBck_Data={`DATA_WIDTH{1'b0}};
                    Wr_En=1'b0;
                   end 
                   
-                  if(Result_valid)
+                  if(Result_Valid)
                    begin 
                       WrtBck_Addr=Rd_wb_exe02;
+                      WrtBck_Data=Execution_Result;
                       Wr_En=1'b1;
                     end 
                    else

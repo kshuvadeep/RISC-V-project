@@ -152,7 +152,9 @@ module ArchRegistersInt(
                 `t5:   dout_p1_reg = t5;
                 `t6:   dout_p1_reg = t6;
                 default: dout_p1_reg = 32'h00000000;  // Default case	  
-	endcase 
+	endcase
+          //Read Wrire port conflict handling 
+            if( 
    end 	
 
      if(we_p2)

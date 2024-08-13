@@ -18,7 +18,8 @@
 //	input intr,  to be implemented later 
 	input clk ,
 	input reset,
-	input data_valid
+	input data_valid,
+        output reg[`INST_WIDTH-1:0] opcode
 
         );
 localparam STATE_WIDTH=2;
@@ -80,7 +81,8 @@ localparam STATE_WIDTH=2;
 			    we_reg=1'b0;
  			    end 
 		     `WAIT :  begin
-			      req_valid_reg=1'b1; 
+			      req_valid_reg=1'b1;
+                               IR_v=1'b0; 
 			      if(data_valid)
 			      begin 
 			      NextState=`RX;
@@ -107,7 +109,19 @@ localparam STATE_WIDTH=2;
 
 		PresentState=NextState;
 
-      end 		
+      end 
+
+           always@(posedge clk)
+            begin 
+              if(reset)
+              begin 
+                opcode={`INST_WIDTH{1'b0}};
+              end 
+               if(IR_v)
+                begin 
+                    opcode=InstructionRegister;
+                end 
+            end 		
 
    assign Addr=Addr_reg;
    assign req_valid=req_valid_reg;

@@ -94,7 +94,7 @@ module decoder(
                    		 rs1_valid_reg = 1'b1;
                    	         rs2_valid_reg = 1'b0;
                     rd_valid_reg = 1'b1;
-                    instruction_type_reg = `I_TYPE;
+                    instruction_type_reg = `I_TYPE_OP;
                             end
 
 	            `LOAD_OP: begin
