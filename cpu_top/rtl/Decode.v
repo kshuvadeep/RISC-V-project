@@ -17,7 +17,8 @@ module decoder(
 	   input clk,
 	   input reset,
 	   input system_stall,
-	  
+           input uop_valid_in ,
+	   input source_not_ready, 
 	   //outputs to RF 
 	   output[`REG_ADDR_WIDTH-1:0] rs1,
            output[`REG_ADDR_WIDTH-1:0] rs2,
@@ -28,7 +29,8 @@ module decoder(
 	    output[2:0] funct3,
            output[6:0] funct7,
             output[20:0] immediate ,
-	   output decoder_stall
+	  // output decoder_stall,
+           output uop_valid_out
     );
 
    // local register 
@@ -36,13 +38,18 @@ module decoder(
     reg[2:0] funct3_reg ;
     reg[6:0] funct7_reg;
     reg[20:0] immediate_reg;
-    wire[6:0] instruction_opcode;
+    reg[6:0] instruction_opcode;
     reg[`REG_ADDR_WIDTH-1:0] rs1_reg,rs2_reg,rd_reg;
-    reg rs1_valid_reg,rs2_valid_reg,rd_valid_reg;
+    reg rs1_valid_reg,rs2_valid_reg,rd_valid_reg,uop_valid_out_reg;
+    wire uop_valid_decode;
 
-    // decode logic 
 
-    assign instruction_opcode=instruction[6:0];
+
+   // Uop valid computation, assert the uop valid 
+   // if a uop is coming for the first time or stalling becuase 
+   //of data dependency . in case of stall due to data dependency
+  // redispatch the uop from the decode stage 
+   assign  uop_valid_decode= uop_valid_in | source_not_ready ;
 
     always @(posedge clk )
     begin 
@@ -60,12 +67,17 @@ module decoder(
             rs1_valid_reg = 1'b0;
             rs2_valid_reg = 1'b0;
             rd_valid_reg = 1'b0;
+            uop_valid_out_reg=1'b0;
+            instruction_opcode=7'b0;
 
          end
 
-	 else if(~system_stall)
+           	  
+
+	 else if(~system_stall && uop_valid_decode )
          begin 		 
-	
+	          instruction_opcode=instruction[6:0]; // opcode ,denotes whether a uop is R type ,I type etc 
+
  
          	 case(instruction_opcode) 
 	     		 `R_TYPE_OP : begin
@@ -211,8 +223,15 @@ module decoder(
                 end
 
             endcase
-       end  // ~stall block  
-    end  // always block 
+               
+       end  // ~stall block 
+        
+         //uop valid out
+ 
+             uop_valid_out_reg= uop_valid_decode;
+
+            
+     end  // always block 
 
      assign instruction_type = instruction_type_reg;
     assign funct3 = funct3_reg;
@@ -224,7 +243,8 @@ module decoder(
     assign rs1_valid = rs1_valid_reg;
     assign rs2_valid = rs2_valid_reg;
     assign rd_valid = rd_valid_reg;
-    assign decoder_stall = system_stall;
+  //  assign decoder_stall = system_stall;
+    assign uop_valid_out=uop_valid_out_reg & ~source_not_ready; // make the uop invalid as their sources are not ready 
 
 
     endmodule 

@@ -14,6 +14,7 @@
 	 //clk & reset 
 	 input clk ,
          input reset ,
+         input uop_valid_in,
 	 //control 
 	  input[1:0] add_type,
          // source 		  
@@ -46,7 +47,9 @@
                  adder_src1={`DATA_WIDTH{1'b0}};
                  adder_src2={`DATA_WIDTH{1'b0}};
 	     end 
-
+             
+             if(uop_valid_in)
+             begin
 	       case(add_type)
 
 		       `CTRL_ADD :  begin src2_inp=src2; end 
@@ -55,6 +58,7 @@
 		       default :  begin src2_inp={`DATA_WIDTH{1'b0}}; end 
 		      
               endcase 
+            end 
               // store the operand1   
 	       adder_src1=src1;
 

@@ -8,6 +8,7 @@ module logical_unit
     //clk & reset 
     input clk,
     input reset,
+    input uop_valid_in,
     //control 
     input [2:0] logic_type,
     // source         
@@ -47,7 +48,9 @@ module logical_unit
     assign Xor_result = logical_src1 ^ logical_src2;
 
     always@(*)
-    begin 
+    begin
+       if(uop_valid_in)
+       begin 
         case(logic_type)
             `CTRL_AND:  logical_value_reg = And_result;
             `CTRL_OR  : logical_value_reg = Or_result;
@@ -57,6 +60,7 @@ module logical_unit
             `CTRL_XORI:  logical_value_reg = Xor_result;
             default:                logical_value_reg = {`DATA_WIDTH{1'b0}};
         endcase
+       end //uop valid 
     end 
 
     assign logical_value = logical_value_reg;

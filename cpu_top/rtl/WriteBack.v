@@ -6,7 +6,7 @@
 
 
 `include "system_param.vh"
-
+`include "Macros.vh"
 
 
 module WriteBack(
@@ -14,7 +14,7 @@ module WriteBack(
             //dest register 
             input[`REG_ADDR_WIDTH-1:0] Rd_decode, //coming from decode stage 
             input[`DATA_WIDTH-1:0] Execution_Result ,
-            input Result_Valid,
+            input uop_valid_in,
             //clk ,reset
             input clk , reset ,
             //output 
@@ -42,7 +42,7 @@ module WriteBack(
                    Wr_En=1'b0;
                   end 
                   
-                  if(Result_Valid)
+                  if(uop_valid_in)
                    begin 
                       WrtBck_Addr=Rd_wb_exe02;
                       WrtBck_Data=Execution_Result;

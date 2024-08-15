@@ -40,11 +40,12 @@ module execution(
       input[6:0] funct7,
       input[20:0] immediate ,
       input system_stall,
+      input uop_valid_in,
       input[`DATA_WIDTH-1:0] data_src1,
       input[`DATA_WIDTH-1:0]  data_src2,
       //outputs 
       output [`DATA_WIDTH-1:0] Execution_Result,
-      output reg Result_valid,
+      output reg  uop_valid_out,
      //* Mem to be implemented later 
      // output [`ADDR_WIDTH-1:0] Mem_addr,
      // output uop_is_mem ,  
@@ -59,7 +60,7 @@ module execution(
       wire [`CTRL_LOGIC_WIDTH-1:0] ctrl_logic ;
       wire [`CTRL_ADD_WIDTH-1:0] ctrl_adder ;
       wire uop_is_logic,uop_is_add;
-       
+      reg uop_valid_intermediate; 
 
       //Registers
       //
@@ -71,6 +72,7 @@ module execution(
     .funct7(funct7),
     .clk(clk),
     .reset(reset),
+    .uop_valid_in(uop_valid_in),
     .ctrl_adder(ctrl_adder),
     .uop_is_add(uop_is_add),
     .ctrl_logic(ctrl_logic),
@@ -83,6 +85,7 @@ module execution(
        logical_unit u_logical_unit (
     .clk(clk),
     .reset(reset),
+    .uop_valid_in(uop_valid_intermediate),
     .logic_type(ctrl_logic),
     .src1(data_src1),
     .src2(data_src2),
@@ -94,6 +97,7 @@ module execution(
      Adder_int u_Adder_int (
         .clk(clk), 
         .reset(reset),
+        .uop_valid_in(uop_valid_in),
         .add_type(ctrl_adder),
         .src1(data_src1),
         .src2(data_src2),
@@ -108,6 +112,7 @@ module execution(
             if(reset)
             begin 
 		Execution_Result_exe01={`DATA_WIDTH{1'b0}};
+                uop_valid_out=1'b0;
             end 
              
             if(uop_is_add)
@@ -116,11 +121,13 @@ module execution(
             begin 	Execution_Result_exe01=logical_value_exe01; end 
           end // always block  
        
-      assign result_valid_exe01 =(uop_is_add| uop_is_logic) ;
+      assign result_valid_exe01 =(uop_is_add| uop_is_logic) ;   // gate here for any execution error like overflow detection from adder etc in future
 
        //Flop the result for staging to WB 
          `POS_EDGE_FF(clk,reset, Execution_Result_exe01,Execution_Result_exe02)
-         `POS_EDGE_FF(clk,reset,result_valid_exe01,Result_valid)
+       //  `POS_EDGE_FF(clk,reset,result_valid_exe01,Result_valid)
+          `POS_EDGE_FF(clk,reset,uop_valid_in,uop_valid_intermediate)
+          `POS_EDGE_FF(clk,reset,uop_valid_intermediate | result_valid_exe01 ,uop_valid_out)
 
 
       assign  Execution_Result=Execution_Result_exe02;

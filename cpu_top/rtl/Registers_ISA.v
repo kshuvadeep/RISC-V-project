@@ -16,6 +16,7 @@
 //***************************************
 
 `include "register_defines.vh"
+`include "Macros.vh"
 module ArchRegistersInt(
 
 	input clk ,
@@ -47,21 +48,21 @@ module ArchRegistersInt(
    reg[31:0] zero,ra,sp,gp,tp,t0,t1,t2,t3,t4,t5,t6,s0,s1;
    reg[31:0] a0,a1,a2,a3,a4,a5,a6,a7,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11;
    reg[31:0] dout_p0_reg ,dout_p1_reg;
-
+   reg re_p0_reg, re_p1_reg;
 
    //registers valid array
    reg[31:0] V_array ; 
    reg v_p0_reg,v_p1_reg;
  
-   wire re_p0_reg,re_p1_reg,we_p2_reg;
+   wire re_p0_conflict,re_p1_conflict,we_p2_reg;
    wire ReadP0Conflict,ReadP1Conflict;
 
    //conflict detector 
   assign ReadP0Conflict=(addr_p0==addr_p2) & re_p0 & we_p2;
   assign ReadP1Conflict =(addr_p1==addr_p2) & re_p1 & we_p2;
 
-   assign re_p0_reg = ReadP0Conflict ? 1'b0:re_p0;
-   assign re_p1_reg =  ReadP1Conflict  ? 1'b0:re_p1;
+   assign re_p0_conflict = ReadP0Conflict ? 1'b0:re_p0;
+   assign re_p1_conflict =  ReadP1Conflict  ? 1'b0:re_p1;
    assign ReadWriteConflict= ReadP0Conflict | ReadP1Conflict ;
 
    //behavioral design (may need to code it structurally in order to meet
@@ -73,9 +74,15 @@ module ArchRegistersInt(
      begin 
         zero=0;ra=0;sp=0;gp=0;tp=0;t0=0;t1=0;t2=0;t3=0;t4=0;t5=0;t6=0;s0=0;s1=0; dout_p0_reg=0; dout_p1_reg=0;
 	a0=0;a1=0;a2=0;a3=0;a4=0;a5=0;a6=0;a7=0;s2=0;s3=0;s4=0;s5=0;s6=0;s7=0;s8=0;s9=0;s10=0;s11=0;
+        re_p0_reg=1'b0; re_p1_reg=1'b0;
       end 
-      
-      if(re_p0_reg) // decoder for p0
+     
+       //need to flop the enable for cycle accurate computation 
+        re_p0_reg=re_p0;
+        re_p1_reg=re_p1_reg; 
+    
+ 
+      if(re_p0_conflict) // decoder for p0
       begin 
           case(addr_p0)
 	    `zero: dout_p0_reg =zero;
@@ -115,7 +122,7 @@ module ArchRegistersInt(
    end 	
 
    // decoder for p1 
-      if(re_p1_reg) 
+      if(re_p1_conflict) 
       begin 
           case(addr_p1)
 	    `zero: dout_p1_reg =zero;
@@ -154,7 +161,6 @@ module ArchRegistersInt(
                 default: dout_p1_reg = 32'h00000000;  // Default case	  
 	endcase
           //Read Wrire port conflict handling 
-            if( 
    end 	
 
      if(we_p2)
@@ -204,17 +210,20 @@ module ArchRegistersInt(
   begin 
      if(reset)
      begin
-	    V_array=31'h00000000;
-     end 
+           //initializing the registers with zero 
+           //Other wise pipeline will stall  
+
+	    V_array=32'hFFFFFFFF;    
+    end 
      //p0 read valid array
-     if(re_p0_reg)
+     if(re_p0_conflict)
      begin
 	    v_p0_reg=V_array[addr_p0];
      end 
         else begin  v_p0_reg=1'b0; end 
      //p1 read valid array
 
-      if(re_p1_reg)
+      if(re_p1_conflict)
      begin
 	    v_p1_reg=V_array[addr_p1];
      end 
@@ -243,7 +252,11 @@ module ArchRegistersInt(
        end 
      end 
   end //always block for valid array 
-     
+
+   //need to flop the enable for cycle accurate computation 
+  // Macros not working properly ,need to check in other simulators 
+  // `POS_EDGE_FF(clk,reset,re_p0,re_p0_reg) 
+  //  `POS_EDGE_FF(clk,reset,re_p1,re_p1_reg) 
 
 
 
@@ -251,7 +264,7 @@ module ArchRegistersInt(
   assign dout_p1 =ReadP1Conflict? din_p2:dout_p1_reg;
   assign v_p0=ReadP0Conflict ? 1'b1:v_p0_reg;
   assign v_p1=ReadP1Conflict? 1'b1:v_p1_reg;
-   assign   source_not_ready = (re_p0 ^ v_p0 )  | (re_p1 ^ v_p1 ) ;  // if any of source operands are not ready  
+   assign   source_not_ready = (re_p0_reg ^ v_p0 )  | (re_p1_reg ^ v_p1 ) ;  // if any of source operands are not ready  
 
 
 

@@ -12,6 +12,7 @@ module Alu_ctrl(
     //clk,reset
      input clk ,
      input reset,
+     input uop_valid_in,
      //outputs 
      output reg[`CTRL_ADD_WIDTH-1:0] ctrl_adder,  //adder datapath control 
      output reg uop_is_add,
@@ -28,7 +29,9 @@ module Alu_ctrl(
          ctrl_adder={`CTRL_ADD_WIDTH{1'b0}}; 
          ctrl_logic={`CTRL_LOGIC_WIDTH{1'b0}};
        end 
-         // adder ctrl logic 
+         // adder ctrl logic
+      if(uop_valid_in)
+       begin  
          
         if(instruction_type==`R_TYPE_OP && funct3==`R_ADD)
          begin 
@@ -70,6 +73,7 @@ module Alu_ctrl(
             end 
  
             uop_is_logic = (| ctrl_logic); // the encoding is done in such a way 
+       end //uop valid 
  
       end //always block
     

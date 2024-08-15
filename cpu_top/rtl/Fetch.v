@@ -8,6 +8,8 @@
 `define WAIT 2'b11
 `define RX 12'b10
 
+`include "system_param.vh"
+`include "Macros.vh"
 
  module Fetch #(parameter MEM_DEPTH=8 ,parameter DATA_WIDTH=32 ) 
    (
@@ -19,7 +21,8 @@
 	input clk ,
 	input reset,
 	input data_valid,
-        output reg[`INST_WIDTH-1:0] opcode
+        output reg[`INST_WIDTH-1:0] opcode, 
+        output reg uop_valid_out 
 
         );
 localparam STATE_WIDTH=2;
@@ -110,24 +113,28 @@ localparam STATE_WIDTH=2;
 		PresentState=NextState;
 
       end 
+       // opcode and uop valid sent to the pipeline 
+
 
            always@(posedge clk)
             begin 
               if(reset)
               begin 
                 opcode={`INST_WIDTH{1'b0}};
+                uop_valid_out=1'b0;
               end 
                if(IR_v)
                 begin 
                     opcode=InstructionRegister;
                 end 
+              uop_valid_out=IR_v;
             end 		
 
    assign Addr=Addr_reg;
    assign req_valid=req_valid_reg;
    assign we =we_reg ;
-
-
+   //uop valid 
+      // `POS_EDGE_FF(clk,reset,IR_v,uop_valid_out) 
 
 endmodule 
 
