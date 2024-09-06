@@ -5,8 +5,10 @@
 // Architectural registers  to read the data and if source is not found 
 // Decoder will inititate stall signal to halt the system 
 
+`timescale 1ns / 1ps
 `include "rvi32_instructions.vh"
 `include "system_param.vh"
+`include "Macros.vh"
 // for 32 architectural register 
   
 
@@ -42,6 +44,7 @@ module decoder(
     reg[`REG_ADDR_WIDTH-1:0] rs1_reg,rs2_reg,rd_reg;
     reg rs1_valid_reg,rs2_valid_reg,rd_valid_reg,uop_valid_out_reg;
     wire uop_valid_decode;
+    reg uop_valid_in_1cyc; 
 
 
 
@@ -68,13 +71,14 @@ module decoder(
             rs2_valid_reg = 1'b0;
             rd_valid_reg = 1'b0;
             uop_valid_out_reg=1'b0;
+         //  uop_valid_in_1cyc=1'b0;
             instruction_opcode=7'b0;
 
          end
 
            	  
 
-	 else if(~system_stall && uop_valid_decode )
+	 else if(!system_stall && uop_valid_decode )
          begin 		 
 	          instruction_opcode=instruction[6:0]; // opcode ,denotes whether a uop is R type ,I type etc 
 
@@ -228,10 +232,24 @@ module decoder(
         
          //uop valid out
  
-             uop_valid_out_reg= uop_valid_decode;
-
+             uop_valid_out_reg <= uop_valid_decode;
+          //   uop_valid_in_1cyc <=uop_valid_in; //* code not getting simulated properly 
+ 
             
-     end  // always block 
+     end  // always block
+
+     
+  // `POS_EDGE_FF(clk,reset,uop_valid_in,uop_valid_in_1cyc)
+
+    always@(posedge clk)
+   begin 
+     if(reset)
+      begin uop_valid_in_1cyc=1'b0; end 
+     else 
+        begin uop_valid_in_1cyc=uop_valid_in; end 
+   end 
+
+      
 
      assign instruction_type = instruction_type_reg;
     assign funct3 = funct3_reg;
@@ -242,7 +260,7 @@ module decoder(
     assign rd = rd_reg;
     assign rs1_valid = rs1_valid_reg;
     assign rs2_valid = rs2_valid_reg;
-    assign rd_valid = rd_valid_reg;
+    assign rd_valid = uop_valid_out;
   //  assign decoder_stall = system_stall;
     assign uop_valid_out=uop_valid_out_reg & ~source_not_ready; // make the uop invalid as their sources are not ready 
 

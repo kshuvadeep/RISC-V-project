@@ -14,7 +14,7 @@
 //for a:a+15 kind of instructions 
 //Plese note invalidation will only work on the valid bit array 
 //***************************************
-
+`timescale 1ns / 1ps
 `include "register_defines.vh"
 `include "Macros.vh"
 module ArchRegistersInt(
@@ -79,7 +79,7 @@ module ArchRegistersInt(
      
        //need to flop the enable for cycle accurate computation 
         re_p0_reg=re_p0;
-        re_p1_reg=re_p1_reg; 
+        re_p1_reg=re_p1; 
     
  
       if(re_p0_conflict) // decoder for p0
@@ -128,7 +128,6 @@ module ArchRegistersInt(
 	    `zero: dout_p1_reg =zero;
              `ra:   dout_p1_reg=ra ;
               `sp:   dout_p1_reg = sp;
-                `gp:   dout_p1_reg = gp;
                 `gp:   dout_p1_reg = gp;
                 `tp:   dout_p1_reg = tp;
                 `t0:   dout_p1_reg = t0;
@@ -230,7 +229,7 @@ module ArchRegistersInt(
     
      else begin  v_p1_reg=1'b0; end
 
-    //write ports
+    //write port conflict with invalidation 
     if(addr_pi==addr_p2 & we_p2 & we_pi) 
     begin 
        V_array[addr_pi]=1'b0; 

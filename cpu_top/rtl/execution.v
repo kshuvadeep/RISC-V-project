@@ -22,7 +22,7 @@
 // add_value_exe01 : denotes the output of adder unit and EXEO1 
 // denotes that it captures the signals that belong to stage 1 of the 
 // pipeline 
-
+`timescale 1ns / 1ps
 `include "system_param.vh"
 `include "rvi32_instructions.vh"
 `include "Execution_param.vh"
@@ -34,8 +34,7 @@
 
 
 module execution(
-
-     input[6:0] instruction_type,
+      input[6:0] instruction_type,
       input[2:0] funct3,
       input[6:0] funct7,
       input[20:0] immediate ,
@@ -59,7 +58,7 @@ module execution(
       wire result_valid_exe01;
       wire [`CTRL_LOGIC_WIDTH-1:0] ctrl_logic ;
       wire [`CTRL_ADD_WIDTH-1:0] ctrl_adder ;
-      wire uop_is_logic,uop_is_add;
+      wire uop_is_logic_nq,uop_is_add_nq,uop_is_add,uop_is_logic;
       reg uop_valid_intermediate; 
 
       //Registers
@@ -74,9 +73,9 @@ module execution(
     .reset(reset),
     .uop_valid_in(uop_valid_in),
     .ctrl_adder(ctrl_adder),
-    .uop_is_add(uop_is_add),
+    .uop_is_add(uop_is_add_nq),
     .ctrl_logic(ctrl_logic),
-    .uop_is_logic(uop_is_logic)
+    .uop_is_logic(uop_is_logic_nq)
        ); 
   
       //execution units or datapath units 
@@ -107,6 +106,12 @@ module execution(
    
        //Datapath Muxing
 
+      // valid qualification 
+      // uop is add is generated in exe01 stage ,hence it is 
+     // qualified with uop_valid_intermediate;
+      assign  uop_is_add =uop_is_add_nq & uop_valid_intermediate;
+      assign  uop_is_logic= uop_is_logic_nq & uop_valid_intermediate;
+
          always@(*)
          begin
             if(reset)
@@ -127,7 +132,7 @@ module execution(
          `POS_EDGE_FF(clk,reset, Execution_Result_exe01,Execution_Result_exe02)
        //  `POS_EDGE_FF(clk,reset,result_valid_exe01,Result_valid)
           `POS_EDGE_FF(clk,reset,uop_valid_in,uop_valid_intermediate)
-          `POS_EDGE_FF(clk,reset,uop_valid_intermediate | result_valid_exe01 ,uop_valid_out)
+          `POS_EDGE_FF(clk,reset,result_valid_exe01 ,uop_valid_out)
 
 
       assign  Execution_Result=Execution_Result_exe02;

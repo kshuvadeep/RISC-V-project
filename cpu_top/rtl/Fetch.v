@@ -2,7 +2,7 @@
 // Development of a basic risc -v cpu core .
 // 26h july 
 //`include "Global_defines.vh"
-
+`timescale 1ns / 1ps
 `define RESET 2'b00
 `define TX 2'b01 
 `define WAIT 2'b11
@@ -13,27 +13,28 @@
 
  module Fetch #(parameter MEM_DEPTH=8 ,parameter DATA_WIDTH=32 ) 
    (
-	output[ADDR_WIDTH -1:0] Addr ,
-	inout[DATA_WIDTH-1:0] Data,
+	output[`ADDR_WIDTH -1:0] Addr ,
+	inout[`DATA_WIDTH-1:0] Data,
 	output we,
         output  req_valid,
 //	input intr,  to be implemented later 
 	input clk ,
 	input reset,
 	input data_valid,
+        input system_stall ,
         output reg[`INST_WIDTH-1:0] opcode, 
         output reg uop_valid_out 
 
         );
 localparam STATE_WIDTH=2;
- localparam ADDR_WIDTH=$clog2(MEM_DEPTH);
+// localparam `ADDR_WIDTH=$clog2(MEM_DEPTH);
      // top level 
 
      //architectural registers for simple registers  
 
    //  reg[31:0] A, B,C,D,E  //specify the registers later 
      reg req_valid_reg,we_reg;
-     reg [ADDR_WIDTH -1:0] Addr_reg; 
+     reg [`ADDR_WIDTH -1:0] Addr_reg; 
      reg[STATE_WIDTH-1:0] PresentState , NextState;
      //program counter
      reg[31:0] ProgramCounter;
@@ -54,7 +55,9 @@ localparam STATE_WIDTH=2;
 	  NextState=`RESET;
 	  end 
 	  
-           
+         
+          if( !system_stall) 
+          begin 
 	    case(PresentState) 
 
 	    
@@ -111,8 +114,9 @@ localparam STATE_WIDTH=2;
                 endcase 
 
 		PresentState=NextState;
+        end // system stall 
 
-      end 
+      end //always block  
        // opcode and uop valid sent to the pipeline 
 
 

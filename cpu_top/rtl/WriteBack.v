@@ -4,7 +4,7 @@
 // date :August 9th , 6:30 pm 
 //Author : Shuvadeep Kumar 
 
-
+`timescale 1ns / 1ps
 `include "system_param.vh"
 `include "Macros.vh"
 
@@ -29,9 +29,21 @@ module WriteBack(
    
              //flopping the destination register for cycle allignment 
             // as it comes from decode stage  
+            // Macros are not working realibily 
 
-             `POS_EDGE_FF(clk,reset,Rd_decode,Rd_wb_exe01)
-             `POS_EDGE_FF(clk,reset,Rd_wb_exe01,Rd_wb_exe02)
+         //    `POS_EDGE_FF(clk,reset,Rd_decode,Rd_wb_exe01)
+          //   `POS_EDGE_FF(clk,reset,Rd_wb_exe01,Rd_wb_exe02)
+
+           always@(posedge clk)
+           begin 
+             if(reset)
+             begin 
+                Rd_wb_exe01={`REG_ADDR_WIDTH{1'b0}};
+                Rd_wb_exe02={`REG_ADDR_WIDTH{1'b0}};
+              end 
+                    Rd_wb_exe01 <= Rd_decode;
+                     Rd_wb_exe02 <= Rd_wb_exe01;
+            end  //always block 
 
              always@(posedge clk)
               begin 

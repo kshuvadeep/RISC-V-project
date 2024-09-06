@@ -3,7 +3,7 @@
 //and behaviorally 
 //Date:6th august ,2024 : Risc Free Corp 
 //****************************************
-
+`timescale 1ns / 1ps
 `include "system_param.vh"
 `include "Execution_param.vh"
 `include "rvi32_instructions.vh"
