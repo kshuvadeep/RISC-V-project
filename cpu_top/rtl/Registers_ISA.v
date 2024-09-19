@@ -39,9 +39,9 @@ module ArchRegistersInt(
 	//Pi , invalidation port
 	input we_pi,
 	input[4:0] addr_pi,
-	  
+	input uop_valid,  
 
-	 output source_not_ready
+	 output source_not_ready 
  );
 
     // registers :
@@ -53,6 +53,7 @@ module ArchRegistersInt(
    //registers valid array
    reg[31:0] V_array ; 
    reg v_p0_reg,v_p1_reg;
+   reg uop_valid_out;
  
    wire re_p0_conflict,re_p1_conflict,we_p2_reg;
    wire ReadP0Conflict,ReadP1Conflict;
@@ -74,7 +75,7 @@ module ArchRegistersInt(
      begin 
         zero=0;ra=0;sp=0;gp=0;tp=0;t0=0;t1=0;t2=0;t3=0;t4=0;t5=0;t6=0;s0=0;s1=0; dout_p0_reg=0; dout_p1_reg=0;
 	a0=0;a1=0;a2=0;a3=0;a4=0;a5=0;a6=0;a7=0;s2=0;s3=0;s4=0;s5=0;s6=0;s7=0;s8=0;s9=0;s10=0;s11=0;
-        re_p0_reg=1'b0; re_p1_reg=1'b0;
+        re_p0_reg=1'b0; re_p1_reg=1'b0; uop_valid_out=1'b0;
       end 
      
        //need to flop the enable for cycle accurate computation 
@@ -119,7 +120,9 @@ module ArchRegistersInt(
                 `t6:   dout_p0_reg = t6;
                 default: dout_p0_reg = 32'h00000000;  // Default case	  
 	endcase 
-   end 	
+   end 
+
+   
 
    // decoder for p1 
       if(re_p1_conflict) 
@@ -160,7 +163,14 @@ module ArchRegistersInt(
                 default: dout_p1_reg = 32'h00000000;  // Default case	  
 	endcase
           //Read Wrire port conflict handling 
-   end 	
+   end 
+
+      // data forwarding 
+     if(ReadP0Conflict)
+      	dout_p0_reg=din_p2;
+    if(ReadP1Conflict)
+      	dout_p1_reg=din_p2;
+	
 
      if(we_p2)
       begin
@@ -254,16 +264,21 @@ module ArchRegistersInt(
 
    //need to flop the enable for cycle accurate computation 
   // Macros not working properly ,need to check in other simulators 
-  // `POS_EDGE_FF(clk,reset,re_p0,re_p0_reg) 
-  //  `POS_EDGE_FF(clk,reset,re_p1,re_p1_reg) 
+  // `POS_EDGE_FF(clk,reset,re_p0,re_p0_reg)
+ 
+   `POS_EDGE_FF(clk,reset,uop_valid,uop_valid_out) 
 
 
+  
 
-  assign dout_p0 =ReadP0Conflict ? din_p2:dout_p0_reg;  // data forwarding in case of write back on the same register 
-  assign dout_p1 =ReadP1Conflict? din_p2:dout_p1_reg;
+
+//  assign dout_p0 =ReadP0Conflict ? din_p2:dout_p0_reg;  // data forwarding in case of write back on the same register 
+//  assign dout_p1 =ReadP1Conflict? din_p2:dout_p1_reg;
+  assign dout_p0 =dout_p0_reg;  
+  assign dout_p1 =dout_p1_reg;
   assign v_p0=ReadP0Conflict ? 1'b1:v_p0_reg;
   assign v_p1=ReadP1Conflict? 1'b1:v_p1_reg;
-   assign   source_not_ready = (re_p0_reg ^ v_p0 )  | (re_p1_reg ^ v_p1 ) ;  // if any of source operands are not ready  
+  assign source_not_ready = ((re_p0_reg ^ v_p0 )  | (re_p1_reg ^ v_p1 )) & uop_valid_out ;  // if any of source operands are not ready  
 
 
 

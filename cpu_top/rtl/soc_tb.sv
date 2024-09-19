@@ -20,9 +20,10 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
+`include "Soc.v"
+`include "cpu_top.v"
 
-
-module SOC_tb;
+module soc_tb;
 
     // Parameters for width
    parameter DATA_WIDTH = 32;
@@ -38,7 +39,7 @@ module SOC_tb;
     wire [DATA_WIDTH-1:0] data;
 
     // Instantiate the SOC module
-    SOC #(MEM_DEPTH,DATA_WIDTH)
+    Soc #(MEM_DEPTH,DATA_WIDTH)
     dut (
         .clk(clk),
         .reset(reset)
@@ -78,8 +79,8 @@ module SOC_tb;
  initial begin
         // Dump waveforms
         $dumpfile("waves.vcd");
-        $dumpvars(0, SOC_tb);       // Include top-level signals in the testbench module
-        $dumpvars(1, SOC_tb.dut);   // Include signals in the counter module (uut instance)
+        $dumpvars(0, soc_tb);       // Include top-level signals in the testbench module
+        $dumpvars(1, soc_tb.dut);   // Include signals in the counter module (uut instance)
 	// $dumpvars(1, testbench.dut); 
     end
 

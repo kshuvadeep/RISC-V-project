@@ -10,54 +10,77 @@
 `include "system_param.vh"
 `include "Macros.vh"
 // for 32 architectural register 
+
+// To do : currently we are not using any switch 
+// for simulation only signals 
+// These signals needs to be added under a switch later 
   
 
 module decoder(
 
-	  // inputs 
+           input [`ADDR_WIDTH-1:0] pc_in,
+           output reg [`ADDR_WIDTH-1:0] pc_out,
+          //sim only 
+           output reg[`INST_WIDTH-1:0] instruction_out,
+
+	  // inputs
            input[`INST_WIDTH-1 :0] instruction,
 	   input clk,
 	   input reset,
 	   input system_stall,
+           input system_flush,
            input uop_valid_in ,
-	   input source_not_ready, 
+	   input source_not_ready,
 	   //outputs to RF 
 	   output[`REG_ADDR_WIDTH-1:0] rs1,
            output[`REG_ADDR_WIDTH-1:0] rs2,
 	   output[`REG_ADDR_WIDTH-1:0] rd,
 	   output rs1_valid,rs2_valid,rd_valid,
+
 	   // outputs to Execution unit 
 	   output[6:0] instruction_type,
 	    output[2:0] funct3,
            output[6:0] funct7,
-            output[20:0] immediate ,
+            output[`IMMEDIATE_WIDTH-1:0] immediate ,
 	  // output decoder_stall,
-           output uop_valid_out
+           output uop_valid_out,
+           output uop_valid_decode
     );
+
+ 
+
+
 
    // local register 
     reg[6:0] instruction_type_reg ;
     reg[2:0] funct3_reg ;
     reg[6:0] funct7_reg;
-    reg[20:0] immediate_reg;
+    reg[`IMMEDIATE_WIDTH-1:0] immediate_reg;
     reg[6:0] instruction_opcode;
     reg[`REG_ADDR_WIDTH-1:0] rs1_reg,rs2_reg,rd_reg;
     reg rs1_valid_reg,rs2_valid_reg,rd_valid_reg,uop_valid_out_reg;
-    wire uop_valid_decode;
-    reg uop_valid_in_1cyc; 
+   // wire uop_valid_decode;
+    reg uop_valid_in_1cyc, uop_valid_in_2cyc;
+    reg[`ADDR_WIDTH-1:0] pc_out0;
+    reg [`INST_WIDTH-1:0] instruction_out0; 
 
 
 
    // Uop valid computation, assert the uop valid 
    // if a uop is coming for the first time or stalling becuase 
    //of data dependency . in case of stall due to data dependency
-  // redispatch the uop from the decode stage 
+  // redispatch the uop from the decode stage
+  
+     
    assign  uop_valid_decode= uop_valid_in | source_not_ready ;
 
-    always @(posedge clk )
+
+   
+
+    always @(posedge clk or posedge reset )
     begin 
 
-       if(reset)
+       if(reset || system_flush) 
        begin 
        
 	   instruction_type_reg = 6'b0;
@@ -239,27 +262,43 @@ module decoder(
      end  // always block
 
      
-  // `POS_EDGE_FF(clk,reset,uop_valid_in,uop_valid_in_1cyc)
+   
+//    always@(posedge clk)
+//   begin 
+//     if(reset)
+//      begin uop_valid_in_1cyc <=1'b0;
+//           //  pc_out <= {`ADDR_WIDTH{1'b0}};
+//           //  instruction_out<={`INST_WIDTH{1'b0}};
+//         end 
+//     else 
+//        begin uop_valid_in_1cyc <=uop_valid_in;
+//             // pc_out <= pc_in ;
+//             // instruction_out <=instruction; 
+//           end 
+//   end 
+//
+    // These flops are not Working wrapped by Macro 
+     `POS_EDGE_FF(clk,reset,pc_in,pc_out0)
+     `POS_EDGE_FF(clk,reset,instruction,instruction_out0)
+   // trying out another seqential , this works 
+    // Hack : need to debug this issue , hacking is a temporary solution  
+     `POS_EDGE_FF(clk,reset,pc_out0,pc_out)
+     `POS_EDGE_FF(clk,reset,instruction_out0,instruction_out)
+   // trying to hack , for some weird reason , uop valid is not getting delayed for 1 cyc ,
+    // so ,putting another flop ,hope it works .
+  
+    
+    
 
-    always@(posedge clk)
-   begin 
-     if(reset)
-      begin uop_valid_in_1cyc=1'b0; end 
-     else 
-        begin uop_valid_in_1cyc=uop_valid_in; end 
-   end 
-
-      
-
-     assign instruction_type = instruction_type_reg;
+    assign instruction_type = instruction_type_reg;
     assign funct3 = funct3_reg;
     assign funct7 = funct7_reg;
     assign immediate = immediate_reg;
     assign rs1 = rs1_reg;
     assign rs2 = rs2_reg;
     assign rd = rd_reg;
-    assign rs1_valid = rs1_valid_reg;
-    assign rs2_valid = rs2_valid_reg;
+    assign rs1_valid = rs1_valid_reg ;
+    assign rs2_valid = rs2_valid_reg ;
     assign rd_valid = uop_valid_out;
   //  assign decoder_stall = system_stall;
     assign uop_valid_out=uop_valid_out_reg & ~source_not_ready; // make the uop invalid as their sources are not ready 

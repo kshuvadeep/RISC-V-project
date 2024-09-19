@@ -40,7 +40,8 @@
 
 
 
-	  always@(posedge clk)
+	//  always@(posedge clk)   // Design issue #2 ,remove the clock 
+	  always@(*)   // Design issue #2 ,remove the clock 
 	  begin 
 	     if(reset)
 	     begin 
@@ -48,8 +49,8 @@
                  adder_src2={`DATA_WIDTH{1'b0}};
 	     end 
              
-             if(uop_valid_in)
-             begin
+          //   if(uop_valid_in) ,required for power savings , need to redesign later 
+            // begin
 	       case(add_type)
 
 		       `CTRL_ADD :  begin src2_inp=src2; end 
@@ -58,7 +59,7 @@
 		       default :  begin src2_inp={`DATA_WIDTH{1'b0}}; end 
 		      
               endcase 
-            end 
+         //   end 
               // store the operand1   
 	       adder_src1=src1;
 

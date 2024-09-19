@@ -22,11 +22,17 @@
 	input reset,
 	input data_valid,
         input system_stall ,
+    // branch address and jump address from branch handling unit 
+        input branch_taken ,
+        input[`ADDR_WIDTH-1:0]  next_pc,
+        output system_flush,  
         output reg[`INST_WIDTH-1:0] opcode, 
-        output reg uop_valid_out 
+        output reg uop_valid_out,
+        output reg[`ADDR_WIDTH-1:0] pc_out 
+         
 
         );
-localparam STATE_WIDTH=2;
+   localparam STATE_WIDTH=2;
 // localparam `ADDR_WIDTH=$clog2(MEM_DEPTH);
      // top level 
 
@@ -38,10 +44,17 @@ localparam STATE_WIDTH=2;
      reg[STATE_WIDTH-1:0] PresentState , NextState;
      //program counter
      reg[31:0] ProgramCounter;
+    //old program counter is to be reatained 
+     reg[31:0] ProgramCounter_previous;
      reg PC_v; // program counter valid 
      // instruction register 
      reg[31:0] InstructionRegister;
-     reg IR_v; //Instruction regsiter valid 
+     reg IR_v; //Instruction regsiter valid
+
+
+          
+        
+       
 
      always@(posedge clk or posedge reset)
      begin
@@ -50,13 +63,17 @@ localparam STATE_WIDTH=2;
 	   // There will be some Arbitration scheme required in future 
 	   // to arbitrate between requests from Instruction and data sides
 	   // change (1) 
-	  if(reset)
+	  if(reset || system_flush)
 	  begin 
 	  NextState=`RESET;
+          ProgramCounter_previous={`ADDR_WIDTH{1'b0}};
+          ProgramCounter={`ADDR_WIDTH{1'b0}};  
+          InstructionRegister={`INST_WIDTH{1'b0}};
+ 
 	  end 
 	  
-         
-          if( !system_stall) 
+         //Need to override the system stall condition when there is a branch taken 
+          if( !system_stall || branch_taken)   
           begin 
 	    case(PresentState) 
 
@@ -80,28 +97,59 @@ localparam STATE_WIDTH=2;
        				 end
 
                `TX:   begin 
+                         
+                            ProgramCounter_previous = ProgramCounter ; 
+                             if(branch_taken) 
+                              begin 
+                                NextState =`TX ;
+                                ProgramCounter=next_pc;
+                                PC_v=1'b1;
+                              end
+                             else begin  
+
 		            Addr_reg=ProgramCounter;
 			    req_valid_reg=1'b1;
 			    PC_v=1'b0; IR_v=1'b0;
 			    NextState =`WAIT;
 			    we_reg=1'b0;
+                             end 
+                     
  			    end 
 		     `WAIT :  begin
+
+                              if(branch_taken) 
+                              begin 
+                                NextState =`TX ;
+                               //  ProgramCounter_previous = ProgramCounter ;
+                                ProgramCounter=next_pc;
+                                PC_v=1'b1;
+                              end
+                            else begin 
+
 			      req_valid_reg=1'b1;
                                IR_v=1'b0; 
 			      if(data_valid)
-			      begin 
 			      NextState=`RX;
+                              
+		 	       end 
+		 	     end
 
-		 	      end 
-		 	      end
+		    `RX : begin
+ 
+                            if(branch_taken) 
+                              begin 
+                                NextState =`TX ;
+                               // ProgramCounter_previous = ProgramCounter ;
+                                ProgramCounter=next_pc;
+                                PC_v=1'b1;
+                              end
+                             else begin  
 
-		    `RX : begin 
+            
 		          InstructionRegister=Data;
 			  IR_v=1'b1;
 			  if(ProgramCounter==MEM_DEPTH)
-			  begin ProgramCounter=0;
-			  end
+			  ProgramCounter=0;
 			  ProgramCounter=ProgramCounter+1; 
 			  PC_v=1'b1;
 			  req_valid_reg=1'b0;
@@ -109,7 +157,8 @@ localparam STATE_WIDTH=2;
 			  // to sample a busy signal from the instruction
 			  // buffer and gate this transition 
 			  NextState=`TX;
-		          end
+		          end 
+                        end    
 
                 endcase 
 
@@ -117,7 +166,8 @@ localparam STATE_WIDTH=2;
         end // system stall 
 
       end //always block  
-       // opcode and uop valid sent to the pipeline 
+       // opcode and uop valid sent to the pipeline ent to the pipeline 
+
 
 
            always@(posedge clk)
@@ -126,10 +176,12 @@ localparam STATE_WIDTH=2;
               begin 
                 opcode={`INST_WIDTH{1'b0}};
                 uop_valid_out=1'b0;
+                pc_out={`ADDR_WIDTH{1'b0}};
               end 
                if(IR_v)
                 begin 
                     opcode=InstructionRegister;
+                    pc_out=ProgramCounter_previous; 
                 end 
               uop_valid_out=IR_v;
             end 		
@@ -137,8 +189,8 @@ localparam STATE_WIDTH=2;
    assign Addr=Addr_reg;
    assign req_valid=req_valid_reg;
    assign we =we_reg ;
-   //uop valid 
-      // `POS_EDGE_FF(clk,reset,IR_v,uop_valid_out) 
+   // flush logic , to be extended later as development progresses  
+   assign system_flush = branch_taken ;
 
 endmodule 
 

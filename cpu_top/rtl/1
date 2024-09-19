@@ -1,0 +1,12 @@
+
+
+module execution(
+
+     input[6:0] instruction_type,
+      input[2:0] funct3,
+      input[6:0] funct7,
+      input[20:0] immediate ,
+      input system_stall,
+	   input[`DATA_WIDTH-1:0] data_src1,data_src2,
+	input 
+

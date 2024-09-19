@@ -1,0 +1,168 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Sun Aug 18 15:28:46 2024
+[*]
+[dumpfile] "/home/shuvadeep/Documents/Work/RISC_V/cpu_top/rtl/sim/waves.vcd"
+[dumpfile_mtime] "Fri Aug 16 10:38:35 2024"
+[dumpfile_size] 26583
+[savefile] "/home/shuvadeep/Documents/Work/RISC_V/cpu_top/rtl/sim/soc_valid_stall_logic.gtkw"
+[timestart] 96900
+[size] 1848 1016
+[pos] -1 -1
+*-16.000648 330000 270000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] SOC_tb.
+[treeopen] SOC_tb.dut.
+[treeopen] SOC_tb.dut.core1.
+[treeopen] SOC_tb.dut.core1.execution_inst.
+[sst_width] 282
+[signals_width] 262
+[sst_expanded] 1
+[sst_vpaned_height] 289
+@28
+SOC_tb.dut.clk
+SOC_tb.dut.reset
+@200
+-
+-Fetch
+@22
+SOC_tb.dut.core1.u_fetch.InstructionRegister[31:0]
+@28
+SOC_tb.dut.core1.u_fetch.IR_v
+SOC_tb.dut.core1.u_fetch.uop_valid_out
+@200
+-
+-Decoder
+@28
+SOC_tb.dut.core1.decoder_inst.clk
+@22
+SOC_tb.dut.core1.decoder_inst.instruction_opcode[6:0]
+@28
+[color] 3
+SOC_tb.dut.core1.decoder_inst.uop_valid_in
+[color] 6
+SOC_tb.dut.core1.decoder_inst.uop_valid_decode
+SOC_tb.dut.core1.decoder_inst.source_not_ready
+[color] 3
+SOC_tb.dut.core1.decoder_inst.uop_valid_out
+@22
+SOC_tb.dut.core1.decoder_inst.rs1[4:0]
+SOC_tb.dut.core1.rs1_wire[4:0]
+@28
+SOC_tb.dut.core1.decoder_inst.rs1_valid
+@22
+SOC_tb.dut.core1.decoder_inst.rs2[4:0]
+SOC_tb.dut.core1.rs2_wire[4:0]
+SOC_tb.dut.core1.decoder_inst.rd[4:0]
+@28
+SOC_tb.dut.core1.decoder_inst.rd_valid
+@200
+-exe
+@28
+SOC_tb.dut.core1.execution_inst.clk
+[color] 3
+SOC_tb.dut.core1.execution_inst.uop_valid_in
+@22
+SOC_tb.dut.core1.execution_inst.data_src1[31:0]
+SOC_tb.dut.core1.execution_inst.u_Adder_int.src1[31:0]
+SOC_tb.dut.core1.execution_inst.u_Adder_int.immediate[20:0]
+SOC_tb.dut.core1.execution_inst.u_Adder_int.adder_src2[31:0]
+SOC_tb.dut.core1.execution_inst.u_Adder_int.src2[31:0]
+SOC_tb.dut.core1.execution_inst.data_src2[31:0]
+@28
+SOC_tb.dut.core1.execution_inst.ctrl_adder[1:0]
+@22
+SOC_tb.dut.core1.execution_inst.Execution_Result[31:0]
+@28
+[color] 2
+SOC_tb.dut.core1.execution_inst.uop_is_add
+SOC_tb.dut.core1.execution_inst.uop_is_add_nq
+SOC_tb.dut.core1.execution_inst.uop_valid_out
+SOC_tb.dut.core1.execution_inst.u_Alu_ctrl.uop_valid_in
+SOC_tb.dut.core1.execution_inst.uop_valid_intermediate
+SOC_tb.dut.core1.execution_inst.result_valid_exe01
+@200
+-
+-Wback
+@28
+SOC_tb.dut.core1.WriteBack_inst.clk
+SOC_tb.dut.core1.WriteBack_inst.uop_valid_in
+@22
+SOC_tb.dut.core1.WriteBack_inst.WrtBck_Addr[4:0]
+SOC_tb.dut.core1.WriteBack_inst.WrtBck_Data[31:0]
+@28
+SOC_tb.dut.core1.WriteBack_inst.Wr_En
+@200
+-registers
+-registers
+@28
+SOC_tb.dut.core1.ArchRegistersInt_inst.clk
+@22
+SOC_tb.dut.core1.ArchRegistersInt_inst.t0[31:0]
+SOC_tb.dut.core1.ArchRegistersInt_inst.t1[31:0]
+SOC_tb.dut.core1.ArchRegistersInt_inst.t2[31:0]
+@23
+SOC_tb.dut.core1.ArchRegistersInt_inst.t3[31:0]
+@22
+SOC_tb.dut.core1.ArchRegistersInt_inst.t4[31:0]
+SOC_tb.dut.core1.ArchRegistersInt_inst.t5[31:0]
+@c00022
+SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+@28
+(0)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(1)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(2)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(3)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(4)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(5)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(6)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(7)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(8)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(9)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(10)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(11)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(12)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(13)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(14)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(15)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(16)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(17)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(18)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(19)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(20)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(21)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(22)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(23)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(24)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(25)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(26)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(27)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(28)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(29)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(30)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+(31)SOC_tb.dut.core1.ArchRegistersInt_inst.V_array[31:0]
+@1401200
+-group_end
+@28
+SOC_tb.dut.core1.ArchRegistersInt_inst.we_pi
+SOC_tb.dut.core1.ArchRegistersInt_inst.v_p1_reg
+SOC_tb.dut.core1.ArchRegistersInt_inst.v_p1
+SOC_tb.dut.core1.ArchRegistersInt_inst.re_p0
+SOC_tb.dut.core1.ArchRegistersInt_inst.re_p1
+SOC_tb.dut.core1.ArchRegistersInt_inst.v_p0_reg
+@22
+SOC_tb.dut.core1.ArchRegistersInt_inst.addr_pi[4:0]
+SOC_tb.dut.core1.ArchRegistersInt_inst.addr_p0[4:0]
+SOC_tb.dut.core1.ArchRegistersInt_inst.addr_p1[4:0]
+SOC_tb.dut.core1.ArchRegistersInt_inst.dout_p0[31:0]
+SOC_tb.dut.core1.ArchRegistersInt_inst.dout_p1[31:0]
+@28
+SOC_tb.dut.core1.ArchRegistersInt_inst.ReadP1Conflict
+SOC_tb.dut.core1.ArchRegistersInt_inst.ReadP0Conflict
+@22
+SOC_tb.dut.core1.ArchRegistersInt_inst.addr_p2[4:0]
+@28
+SOC_tb.dut.core1.ArchRegistersInt_inst.we_p2
+@22
+SOC_tb.dut.core1.ArchRegistersInt_inst.din_p2[31:0]
+[pattern_trace] 1
+[pattern_trace] 0

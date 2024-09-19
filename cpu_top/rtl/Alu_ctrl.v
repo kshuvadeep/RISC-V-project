@@ -17,9 +17,11 @@ module Alu_ctrl(
      //outputs 
      output reg[`CTRL_ADD_WIDTH-1:0] ctrl_adder,  //adder datapath control 
      output reg uop_is_add,
-     output reg[`CTRL_LOGIC_WIDTH-1:0] ctrl_logic , //logic unit ctrl 
-    output reg uop_is_logic 
-     ); 
+     output reg[`CTRL_LOGIC_WIDTH-1:0] ctrl_logic , //logic unit ctrl
+     output reg uop_is_logic ,
+   output reg[`CTRL_BRANCH_WIDTH-1:0] ctrl_branch, // branch unit ctrl 
+     output reg uop_is_branch
+        ); 
 
    // Need to extend this further for other kinds of uop in execution unit
 
@@ -29,11 +31,21 @@ module Alu_ctrl(
        begin 
          ctrl_adder={`CTRL_ADD_WIDTH{1'b0}}; 
          ctrl_logic={`CTRL_LOGIC_WIDTH{1'b0}};
+         ctrl_branch={`CTRL_BRANCH_WIDTH{1'b0}};
+
+         uop_is_branch=1'b0;
+         uop_is_add=1'b0;
+         uop_is_logic=1'b0;
+                  
        end 
-         // adder ctrl logic
       if(uop_valid_in)
        begin  
-         
+        
+      //*************************************************************************//
+       // A D D E R        C O N T R O L 
+       //************************************************************************
+
+ 
         if(instruction_type==`R_TYPE_OP && funct3==`R_ADD)
          begin 
           uop_is_add =1'b1;
@@ -51,7 +63,10 @@ module Alu_ctrl(
              end
          else begin   uop_is_add=1'b0;  ctrl_adder={`CTRL_ADD_WIDTH{1'b0}}; end 
 
-         // logic ctrl  
+        //*************************************************************************//
+       // L O G I C       C O N T R O L 
+       //************************************************************************
+ 
            
           if(instruction_type==`R_TYPE_OP)
            begin 
@@ -73,8 +88,42 @@ module Alu_ctrl(
              endcase 
             end 
  
-            uop_is_logic = (| ctrl_logic); // the encoding is done in such a way 
-       end //uop valid 
+            uop_is_logic = (| ctrl_logic); // the encoding is done in such a way
+     end // gating of uop valid  
+
+       //*************************************************************************//
+       // B R A N C H        C O N T R O L 
+       //************************************************************************
+          //branch control  , to do : Need to update the logic with uop_valid gating 
+          if((instruction_type== `BRANCH_OP )|| (instruction_type== `JAL_OP )|| (instruction_type== `JALR_OP ) )
+          begin 
+               uop_is_branch=1'b1;
+             if(instruction_type== `BRANCH_OP ) 
+              begin 
+               case(funct3)
+               `BRANCH_BEQ: ctrl_branch=`CTRL_BEQ ;
+               `BRANCH_BNE: ctrl_branch=`CTRL_BNE ;
+               `BRANCH_BLT: ctrl_branch=`CTRL_BLT ;
+               `BRANCH_BGE: ctrl_branch=`CTRL_BGE ;
+               `BRANCH_BLTU: ctrl_branch=`CTRL_BLTU ;
+               `BRANCH_BGEU: ctrl_branch=`CTRL_BGEU ;
+                default : ctrl_branch={`CTRL_BRANCH_WIDTH{1'b0}};
+              endcase 
+            end 
+              if( instruction_type== `JAL_OP )
+                 ctrl_branch = `CTRL_JAL;
+
+               if( instruction_type== `JALR_OP )
+                 ctrl_branch = `CTRL_JALR;
+         end 
+          else begin 
+                  uop_is_branch=1'b0;
+                   ctrl_branch={`CTRL_BRANCH_WIDTH{1'b0}};
+             end       // branch control 
+
+               
+
+           
  
       end //always block
     

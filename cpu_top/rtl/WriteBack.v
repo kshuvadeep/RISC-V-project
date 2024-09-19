@@ -11,7 +11,8 @@
 
 module WriteBack(
              
-            //dest register 
+            //dest register
+             
             input[`REG_ADDR_WIDTH-1:0] Rd_decode, //coming from decode stage 
             input[`DATA_WIDTH-1:0] Execution_Result ,
             input uop_valid_in,
@@ -20,7 +21,10 @@ module WriteBack(
             //output 
              output reg[`REG_ADDR_WIDTH-1:0] WrtBck_Addr,
              output reg[`DATA_WIDTH-1:0] WrtBck_Data,
-             output reg Wr_En 
+             output reg Wr_En ,
+            //sim only 
+             input[`ADDR_WIDTH-1:0] pc_in,
+             input[`INST_WIDTH-1:0] instruction_in 
            );
 
 

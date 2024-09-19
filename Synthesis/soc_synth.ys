@@ -1,0 +1,5 @@
+read_verilog Soc.v
+read_sdc constraints.sdc
+synth -top Soc
+write_blif Soc.blif
+write_verilog -noattr Soc_synthesized.v

@@ -1,0 +1,54 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Fri Aug  9 12:32:46 2024
+[*]
+[dumpfile] "/home/shuvadeep/Documents/Work/RISC_V/ALU design/tb_execution.vcd"
+[dumpfile_mtime] "Fri Aug  9 12:16:08 2024"
+[dumpfile_size] 5908
+[savefile] "/home/shuvadeep/Documents/Work/RISC_V/ALU design/execution_debug.gtkw"
+[timestart] 0
+[size] 1848 1016
+[pos] -84 -84
+*-14.101996 50000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] tb_execution_unit.
+[treeopen] tb_execution_unit.uut.
+[sst_width] 233
+[signals_width] 254
+[sst_expanded] 1
+[sst_vpaned_height] 289
+@28
+tb_execution_unit.uut.clk
+@22
+tb_execution_unit.uut.data_src1[31:0]
+tb_execution_unit.uut.data_src2[31:0]
+@28
+tb_execution_unit.uut.funct3[2:0]
+@22
+tb_execution_unit.uut.funct7[6:0]
+tb_execution_unit.uut.immediate[20:0]
+@28
+tb_execution_unit.uut.system_stall
+tb_execution_unit.uut.uop_is_add
+tb_execution_unit.uut.uop_is_add_exe01
+@22
+tb_execution_unit.uut.u_Adder_int.adder_src1[31:0]
+tb_execution_unit.uut.u_Adder_int.adder_src2[31:0]
+tb_execution_unit.uut.u_Adder_int.add_value[31:0]
+tb_execution_unit.uut.Execution_Result[31:0]
+tb_execution_unit.uut.Execution_Result_exe01[31:0]
+tb_execution_unit.uut.Execution_Result_exe02[31:0]
+@23
+tb_execution_unit.uut.instruction_type[6:0]
+@28
+tb_execution_unit.uut.reset
+@200
+-
+-alu ctrl signlas
+@28
+tb_execution_unit.uut.u_Alu_ctrl.clk
+tb_execution_unit.uut.u_Alu_ctrl.funct3[2:0]
+@22
+tb_execution_unit.uut.u_Alu_ctrl.funct7[6:0]
+tb_execution_unit.uut.u_Alu_ctrl.instruction_type[6:0]
+[pattern_trace] 1
+[pattern_trace] 0

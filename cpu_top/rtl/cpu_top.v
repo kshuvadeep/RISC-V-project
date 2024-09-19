@@ -50,21 +50,39 @@ wire Result_valid_wire;
 
 wire [`REG_ADDR_WIDTH-1:0]  WrtBck_Addr_wire;
 wire Wr_En_wire;
-wire uop_valid_fetch ,uop_valid_exe,uop_valid_wrtbck;
+wire uop_valid_fetch ,uop_valid_decode,uop_valid_exe,uop_valid_wrtbck;
 
 wire v_p0_wire, v_p1_wire, source_not_ready_wire;
+//program counter is also propagated to execution unit 
+wire[`ADDR_WIDTH-1:0] pc_out_fetch,pc_out_decode ,pc_out_exe, pc_out_branch; 
+
+//`ifdef SIM_ONLY
+wire [`INST_WIDTH-1:0] instruction_out_decode , instruction_out_exe; 
+
 
 //stall ,initial implementation 
 
-wire stall_fetch, stall_decode ; 
+wire stall_fetch, stall_decode,stall_from_exe ,system_flush; 
+
+//branch 
+
+wire branch_taken;
 
 //***********************************************
 
+//************Wires required for simulation  only ***
 
 
 
 
-  Fetch #(
+  //********************************************************************************
+  // Only to be used for simulation  
+  //********************************************************************************
+
+
+
+
+Fetch #(
     .MEM_DEPTH(8),        // Set the memory depth
     .DATA_WIDTH(32)       // Set the data width
      ) 
@@ -77,8 +95,12 @@ wire stall_fetch, stall_decode ;
     .reset(reset),          // Reset input
     .data_valid(data_valid), // Data valid input
     .system_stall(stall_fetch), //stall 
-    .opcode(opcode_wire),
-    .uop_valid_out(uop_valid_fetch)
+    .opcode(opcode_wire),         // opcode 
+    .uop_valid_out(uop_valid_fetch), // uop valid 
+    .pc_out(pc_out_fetch)   ,          // program counter required to compute branch instructions
+    .next_pc(pc_out_branch)   ,       // Next Program counter from branch unit
+    .branch_taken(branch_taken),       //Whether the branch is taken 
+    .system_flush(system_flush)
     );
    
    //Decoder 
@@ -87,6 +109,7 @@ wire stall_fetch, stall_decode ;
     .clk(clk),                            // Clock input
     .reset(reset),                        // Reset input
     .system_stall(stall_decode),     // System stall input
+    .system_flush(system_flush),     //system flush  
     .uop_valid_in(uop_valid_fetch),       //uop valid input from Fetch
     .source_not_ready(source_not_ready_wire), // indicates data is not ready for that uop
     // Outputs to Register File (RF)
@@ -102,25 +125,37 @@ wire stall_fetch, stall_decode ;
     .funct3(funct3_wire),                 // Funct3 output
     .funct7(funct7_wire),                 // Funct7 output
     .immediate(immediate_wire)    ,       // Immediate output
-     .uop_valid_out(uop_valid_exe)
-    //.decoder_stall(decoder_stall_wire)    // Decoder stall output
+     .uop_valid_out(uop_valid_exe),      // uop valid out
+     .uop_valid_decode(uop_valid_decode), //uop valid out from decoder to register files  
+     .pc_in(pc_out_fetch),                       // program counter needs to be propagated 
+    //.decoder_stall(decoder_stall_wire)    // Decoder stall output 
+      .pc_out(pc_out_decode),                       
+      .instruction_out(instruction_out_decode)     //simulation only 
+
      );
    
        //Execution 
     
      execution execution_inst (
+     .instruction_in(instruction_out_decode),          //instruction cycle alligned to exe ,sim only 
+     .instruction_out(instruction_out_exe),            // instructions out alligned to exe ,sim only
+     .pc_out(pc_out_exe) ,                      //pc out ,sim only 
     .instruction_type(instruction_type_wire),    // Instruction type input
     .funct3(funct3_wire),                        // Funct3 input
     .funct7(funct7_wire),                        // Funct7 input
     .immediate(immediate_wire),                  // Immediate input
-    .system_stall(system_stall_wire),            // System stall input
+    .system_stall(1'b0),                         // System stall input
     .uop_valid_in(uop_valid_exe),
     .data_src1(data_src1_wire),                  // Data source 1 input
     .data_src2(data_src2_wire),                  // Data source 2 input
     .Execution_Result(Execution_Result_wire),    // Execution result output
     .uop_valid_out(uop_valid_wrtbck),            // Result valid output
     .clk(clk),                                   // Clock input
-    .reset(reset)                                // Reset input
+    .reset(reset)        ,                        // Reset input
+    .pc_in(pc_out_decode)  ,                      // program counter input 
+    .next_pc(pc_out_branch) ,                       // program counter output
+    .stall_from_exe(stall_from_exe), 
+    .branch_taken(branch_taken)                  //branch taken or not , 0 for jmp instructions  
       )     ;
 
     //Skipping memory related operations for now 
@@ -135,18 +170,21 @@ wire stall_fetch, stall_decode ;
     .reset(reset),                                 // Reset input
     .WrtBck_Addr(WrtBck_Addr_wire),                // Write-back address output
     .WrtBck_Data(WrtBck_data_wire),
-    .Wr_En(Wr_En_wire)                             // Write enable output
+    .Wr_En(Wr_En_wire) ,                            // Write enable output
+    .pc_in(pc_out_exe),                             //SIM ONLY
+    .instruction_in(instruction_out_exe)            // SIM ONLY 
    );
 
 
 
    // **************************************************
-   // R   E  G  I  S  T  E  R  ( 2 read ,1 Write ,1 invalidaiton port 
+   // R   E  G  I  S  T  E  R  ( 2 read ,1 Write ,1 invalidaiton port ) 
    //***************************************************
 
   ArchRegistersInt ArchRegistersInt_inst (
     .clk(clk),                                  // Clock input
     .reset(reset),                              // Reset input
+    .uop_valid(uop_valid_decode),                // uop valid decode 
     
     // p0 read port1
     .addr_p0(rs1_wire),                     // Address for port 0
@@ -172,11 +210,16 @@ wire stall_fetch, stall_decode ;
     .source_not_ready(source_not_ready_wire)    // Source not ready output
      );
 
-    
+
+   
+
+
+
+
 
         // Stall logic 
        assign    stall_fetch=source_not_ready_wire; 
-       assign    stall_decode =source_not_ready_wire; 
+       assign    stall_decode =source_not_ready_wire ; 
 
        //output Glue logic
       
