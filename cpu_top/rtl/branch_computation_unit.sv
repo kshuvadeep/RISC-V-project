@@ -2,6 +2,7 @@
 
 `include "system_param.vh"
 `include "Execution_param.vh" 
+`include "sign_extended_right_shift.v"
 
 module branch_cmp_unit(
 
@@ -21,16 +22,30 @@ module branch_cmp_unit(
 );
 //valid wire 
 
- wire [`ADDR_WIDTH-1:0] imm_jump_extended ,imm_branch_extended;
- //assign imm_jump_extended = {{{`ADDR_WIDTH-`IMMEDIATE_WIDTH}{immediate[20]}}, immediate[11:1], immediate[19:12], 1'b0};
- assign imm_jump_extended = {{{`ADDR_WIDTH-`IMMEDIATE_WIDTH}{immediate[20]}}, immediate[20:0]};
-// assign imm_branch_extended = {{19{immediate[11]}}, immediate[11], immediate[10:5], immediate[4:1], 1'b0};
-// To do : this statement needs review in future ,it's hacked . 
- 
- assign imm_branch_extended = {{20{immediate[11]}}, immediate[11:0]} +2'b10;  // 2's complement representation  
+ wire [`ADDR_WIDTH-1:0] imm_jump_extended ,imm_branch_extended,imm_jump_extended_shifted,imm_branch_extended_shifted;
 
+   assign imm_jump_extended = {{{`ADDR_WIDTH-`IMMEDIATE_WIDTH}{immediate[20]}}, immediate[20:0]};
+  assign  imm_branch_extended = {{20{immediate[12]}}, immediate[12:0]}  ; 
+
+
+  sign_extended_right_shift  branch_shift (
+    .data_in(imm_branch_extended),        // Input data
+    .shift_amount(2),                     // Shift by 2 bits (equivalent to divide by 4)
+    .data_out(imm_branch_extended_shifted) // Output after shifting
+  );
+
+// Instantiate the module for imm_jump_extended_shifted
+sign_extended_right_shift  jump_shift (
+    .data_in(imm_jump_extended),          // Input data
+    .shift_amount(2),                     // Shift by 2 bits (equivalent to divide by 4)
+    .data_out(imm_jump_extended_shifted)  // Output after shifting
+);
+ 
  always@(*) // always comb 
   begin 
+    
+   
+
      if(reset)
       begin 
        next_pc={`ADDR_WIDTH{1'b0}};
@@ -46,15 +61,15 @@ module branch_cmp_unit(
        case( ctrl_branch) 
           
             `CTRL_JAL : begin 
-                       next_pc=pc+imm_jump_extended;
+                       next_pc=pc+imm_jump_extended_shifted;
                        end
            `CTRL_JALR : begin 
-                       next_pc = (src1 + imm_jump_extended) & ~32'b1; 
+                       next_pc = (src1 + imm_jump_extended_shifted) & ~32'b1; 
                        end
 
             `CTRL_BEQ: begin 
                        if(src1==src2)begin 
-                       next_pc = pc+imm_branch_extended;
+                       next_pc = pc+imm_branch_extended_shifted;
                        branch_taken=1'b1;
                        end 
                       else begin 
@@ -65,7 +80,7 @@ module branch_cmp_unit(
                        end 
             `CTRL_BNE : begin 
                        if(src1!==src2)begin 
-                       next_pc = pc+imm_branch_extended;
+                       next_pc = pc+imm_branch_extended_shifted;
                        branch_taken=1'b1;
                        end 
                       else begin 
@@ -77,7 +92,7 @@ module branch_cmp_unit(
 
              `CTRL_BLT :   begin 
                        if(src1<src2)begin 
-                       next_pc = pc+imm_branch_extended;
+                       next_pc = pc+imm_branch_extended_shifted;
                        branch_taken=1'b1;
                        end 
                       else begin 
@@ -89,7 +104,7 @@ module branch_cmp_unit(
              
                  `CTRL_BGE:  begin 
                        if(src1>=src2)begin 
-                       next_pc = pc+imm_branch_extended;
+                       next_pc = pc+imm_branch_extended_shifted;
                        branch_taken=1'b1;
                        end 
                       else begin 
@@ -101,7 +116,7 @@ module branch_cmp_unit(
                // to do :signed and unsigned differentiation will be done during the structural coding 
                `CTRL_BLTU: begin 
                        if(src1<src2)begin 
-                       next_pc = pc+imm_branch_extended;
+                       next_pc = pc+imm_branch_extended_shifted;
                        branch_taken=1'b1;
                        end 
                       else begin 
@@ -113,7 +128,7 @@ module branch_cmp_unit(
   
                   `CTRL_BGEU:begin 
                        if(src1>=src2)begin 
-                       next_pc = pc+imm_branch_extended;
+                       next_pc = pc+imm_branch_extended_shifted;
                        branch_taken=1'b1;
                        end 
                       else begin 

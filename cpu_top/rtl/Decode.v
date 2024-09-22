@@ -167,7 +167,7 @@ module decoder(
                     rs1_reg = instruction[19:15];
                     rs2_reg = instruction[24:20];
                     rd_reg = `REG_ADDR_WIDTH'b0;  // `rd` is not used in B-type instructions
-                    immediate_reg = {instruction[31], instruction[7], instruction[30:25], instruction[11:8]}; // Sign-extended immediate
+                    immediate_reg = {instruction[31], instruction[7], instruction[30:25], instruction[11:8],1'b0}; // Sign-extended immediate
                     rs1_valid_reg = 1'b1;
                     rs2_valid_reg = 1'b1;
                     rd_valid_reg = 1'b0;
@@ -297,9 +297,9 @@ module decoder(
     assign rs1 = rs1_reg;
     assign rs2 = rs2_reg;
     assign rd = rd_reg;
-    assign rs1_valid = rs1_valid_reg ;
+    assign rs1_valid = rs1_valid_reg  ;
     assign rs2_valid = rs2_valid_reg ;
-    assign rd_valid = uop_valid_out;
+    assign rd_valid = rd_valid_reg &  uop_valid_out;
   //  assign decoder_stall = system_stall;
     assign uop_valid_out=uop_valid_out_reg & ~source_not_ready; // make the uop invalid as their sources are not ready 
 

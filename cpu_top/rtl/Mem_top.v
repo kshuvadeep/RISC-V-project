@@ -30,43 +30,27 @@
                             // block called programmer ,which will load the instructions to Memory via 
                            // Serial port or UART
                            
-                       //****************************************************************
-                       //  T e s t c a s e 1  with simple logic and add operations 
-                       //*************************************************************** 
-                      //       Mem[0]=32'h00a00313;      //addi x6,x0,10      
-                      //      Mem[1]=32'h01400393;      //addi x7,x0,20               
-                      //      Mem[2]=32'h00730e33  ;     //add x28,x6,x7
-                      //      Mem[3]=32'h40638eb3 ;    //sub x29,x7,x6
-                      //      Mem[4]=32'h01de7f33  ;    //and x30,x28,x29
-                      //      Mem[5]=32'h01de4fb3   ;   // xor x31,x28,x29
+                      
+		//***************************************************************
+		//  T e s t c a s e : Fibonacci with loops 
+		//***************************************************************
 
- 	        	 //  for(i=6;i<MEM_DEPTH;i=i+1) begin 
-			 //          Mem[i]=i;  // just for creating a test case 
-			 //  end 
+		Mem[0] = 32'h00100293; // addi x5,x0,1 4 li t0 1
+		Mem[1] = 32'h00500313; // addi x6,x0,5 6 li t1 ,5
+		Mem[2] = 32'h00000393; // addi x7,x0,0 9 li t2 , 0
+		Mem[3] = 32'h00100e13; // addi x28,x0,1 12 li t3 ,1
+		Mem[4] = 32'h007e0eb3; // add x29,x28,x7 16 LOOP :add t4 ,t3 ,t2
+		Mem[5] = 32'h000e03b3; // add x7,x28,x0 18 add t2 , t3 ,zero
+		Mem[6] = 32'h000e8e33; // add x28,x29,x0 20 add t3 ,t4 ,zero
+		Mem[7] = 32'h40530333; // sub x6,x6,x5 21 sub t1 ,t1 ,t0
+		Mem[8] = 32'hfe0318e3; // bne x6,x0,0xfffffff0 22 bnez t1 LOOP
 
-			 //  data_valid_reg=1'b0;
+		for(i=9; i<MEM_DEPTH; i=i+1) begin
+   			 Mem[i] = i;  // Just for creating a test case
+		end
 
-
-
-                        //****************************************************************
-                       //  T e s t c a s e 2  with simple add  and loop operations to a multiplication operation  
-                       //*************************************************************** 
-                          
-                            Mem[0]=32'h00a00313;    // addi x6,x0,10 
-                            Mem[1]=32'h00f00393 ;    //addi x7,x0,15
-                            Mem[2]=32'h00000e13 ;   // addi x28,x0,0
-                            Mem[3]=32'h00100e93 ;  // addi x29,x0,1  ;  
-
-                            Mem[4]=32'h007e0e33 ;   //  add x28,x28,x7  ;  accumulation 
-                            Mem[5]=32'h41d30333 ;    //sub x6,x6,x29  ,loop variable decrement
-                            Mem[6]=32'hfe031ce3  ;  //bne x6,x0,0xfffffff8               
-                            
- 
-			   for(i=7;i<MEM_DEPTH;i=i+1) begin 
-				   Mem[i]=i;  // just for creating a test case 
-			   end 
-
-			   data_valid_reg=1'b0;
+		data_valid_reg = 1'b0;
+                                                                       
 
 		   end 
                  else begin
