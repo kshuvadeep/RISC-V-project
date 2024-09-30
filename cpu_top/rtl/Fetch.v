@@ -11,12 +11,14 @@
 `include "system_param.vh"
 `include "Macros.vh"
 
- module Fetch #(parameter MEM_DEPTH=8 ,parameter DATA_WIDTH=32 ) 
+ module Fetch #(parameter MEM_DEPTH=16 ,parameter DATA_WIDTH=32 ) 
    (
-	output[`ADDR_WIDTH -1:0] Addr ,
+	output reg[`ADDR_WIDTH -1:0] Addr ,
 	inout[`DATA_WIDTH-1:0] Data,
-	output we,
-        output  req_valid,
+	output reg we,
+        output reg req_valid,
+        input grant ,
+
 //	input intr,  to be implemented later 
 	input clk ,
 	input reset,
@@ -29,9 +31,8 @@
         output reg[`INST_WIDTH-1:0] opcode, 
         output reg uop_valid_out,
         output reg[`ADDR_WIDTH-1:0] pc_out 
-         
-
         );
+
    localparam STATE_WIDTH=2;
 // localparam `ADDR_WIDTH=$clog2(MEM_DEPTH);
      // top level 
@@ -39,156 +40,216 @@
      //architectural registers for simple registers  
 
    //  reg[31:0] A, B,C,D,E  //specify the registers later 
-     reg req_valid_reg,we_reg;
-     reg [`ADDR_WIDTH -1:0] Addr_reg; 
      reg[STATE_WIDTH-1:0] PresentState , NextState;
      //program counter
      reg[31:0] ProgramCounter;
     //old program counter is to be reatained 
      reg[31:0] ProgramCounter_previous;
-     reg PC_v; // program counter valid 
      // instruction register 
      reg[31:0] InstructionRegister;
      reg IR_v; //Instruction regsiter valid
 
 
-          
+
+
+
+
+
+
+      //************************************************************************************
+      //  R E S E T    L   O  G  I  C 
+      //**********************************************************************************
+     
         
        
 
      always@(posedge clk or posedge reset)
      begin
 	    		      
-           // increment program counter 
-	   // There will be some Arbitration scheme required in future 
-	   // to arbitrate between requests from Instruction and data sides
-	   // change (1) 
-	  if(reset || system_flush)
+                      
+	  if(reset )
 	  begin 
-	  NextState=`RESET;
-          ProgramCounter_previous={`ADDR_WIDTH{1'b0}};
-          ProgramCounter={`ADDR_WIDTH{1'b0}};  
-          InstructionRegister={`INST_WIDTH{1'b0}};
- 
-	  end 
-	  
-         //Need to override the system stall condition when there is a branch taken 
-          if( !system_stall || branch_taken)   
+	//  NextState=`RESET;
+          PresentState=`RESET;
+          InstructionRegister<={`INST_WIDTH{1'b0}};
+          ProgramCounter_previous<={`ADDR_WIDTH{1'b0}};
+          ProgramCounter <={`ADDR_WIDTH{1'b0}};
+           
+
+          end
+
+         
+          if(reset || system_flush)
           begin 
-	    case(PresentState) 
+             req_valid=1'b0;
+             we = 1'b0;
+             Addr = {`ADDR_WIDTH{1'b0}} ;
+             opcode={`INST_WIDTH{1'b0}};
+            uop_valid_out=1'b0;
+            pc_out={`ADDR_WIDTH{1'b0}};
+
+          end 
+
+	  
+         
+      end //always block  
+       // opcode and uop valid sent to the pipeline ent to the pipeline 
+
+
+      //************************************************************************************
+      //P R O G R A M     C O U N T E R       L   O  G  I  C  
+      //**********************************************************************************
+
+
+        always @(posedge clk or posedge reset  )  
+        begin
+
+            if( !system_stall || branch_taken || !reset)   
+          begin 
+	            
+           // Program Counter update logic 
+           //PC is updated only when PresentState is RX 
+           // or whenver there is branch taken    
+              if(branch_taken)
+                  begin 
+                  ProgramCounter_previous <= ProgramCounter ;  
+                  ProgramCounter<=next_pc;
+                  end
+            else  if(NextState == `RX )
+                 begin
+                  ProgramCounter_previous <= ProgramCounter ;  
+                  ProgramCounter <= ProgramCounter+1; 
+                 end 
+
+                    
+
+                //Instruction Register & valid  Update 
+               
+                if(NextState == `RX )
+                 begin
+                  InstructionRegister<=Data;
+	          IR_v<=1'b1;
+                   end 
+                 else 
+                  IR_v <=1'b0;
+
+
+
+
+                  // Limiting unintended executions of invalid instructions  
+
+                if(ProgramCounter==MEM_DEPTH)
+			  ProgramCounter <=0;
+            end 
+        end
+   
+
+    
+
+
+
+      //************************************************************************************
+      //TX & RX  S T A T E     M  A  C  H  I  N  E         L   O  G  I  C 
+      //**********************************************************************************
+
+
+
+
+     always@(*)  //always comb 
+        begin 
+       
+ 
+        if( !system_stall || branch_taken || !reset)   
+        begin 
+
+       //in case of branch taken , unconditionally assume `TX state 
+           if(branch_taken) 
+                 NextState <=`TX ;
+
+             
+
+          case(PresentState) 
 
 	    
-		    
-		    `RESET :    begin
-				ProgramCounter=0;  // Initial value of Program counter , can be programmed to other values .
-             			InstructionRegister=0;
-                        PC_v=1'b1; IR_v=1'b0;
-                     if(reset)
-                     begin 
-                     NextState=`RESET;
-                     end    
-                     
-                                 
-				 we_reg=1'b0;
-				 if(PC_v)
-				 begin 
-				  NextState=`TX;
-       				 end 
-       				 end
+	   	    `RESET :  begin
+             	             if(reset)
+                             begin 
+                              NextState<=`RESET;
+                            end    
+                            else 
+                            NextState <= `TX; 
+                                   
+		             end
 
-               `TX:   begin 
-                         
-                            ProgramCounter_previous = ProgramCounter ; 
-                             if(branch_taken) 
-                              begin 
-                                NextState =`TX ;
-                                ProgramCounter=next_pc;
-                                PC_v=1'b1;
-                              end
-                             else begin  
-
-		            Addr_reg=ProgramCounter;
-			    req_valid_reg=1'b1;
-			    PC_v=1'b0; IR_v=1'b0;
-			    NextState =`WAIT;
-			    we_reg=1'b0;
-                             end 
-                     
+                      `TX:   begin 
+                            if(grant)
+			    	NextState <=`WAIT;
+                             else 
+                                NextState <= `TX;
+  
  			    end 
 		     `WAIT :  begin
 
-                              if(branch_taken) 
-                              begin 
-                                NextState =`TX ;
-                               //  ProgramCounter_previous = ProgramCounter ;
-                                ProgramCounter=next_pc;
-                                PC_v=1'b1;
-                              end
-                            else begin 
+                              if(data_valid)
+			      NextState <= `RX;
+                               else 
+                                 NextState<=`WAIT;
 
-			      req_valid_reg=1'b1;
-                               IR_v=1'b0; 
-			      if(data_valid)
-			      NextState=`RX;
-                              
-		 	       end 
-		 	     end
+                              end 
 
 		    `RX : begin
- 
-                            if(branch_taken) 
-                              begin 
-                                NextState =`TX ;
-                               // ProgramCounter_previous = ProgramCounter ;
-                                ProgramCounter=next_pc;
-                                PC_v=1'b1;
-                              end
-                             else begin  
-
-            
-		          InstructionRegister=Data;
-			  IR_v=1'b1;
-			  if(ProgramCounter==MEM_DEPTH)
-			  ProgramCounter=0;
-			  ProgramCounter=ProgramCounter+1; 
-			  PC_v=1'b1;
-			  req_valid_reg=1'b0;
-			  // in future we need to implement a buffer ,we need
-			  // to sample a busy signal from the instruction
-			  // buffer and gate this transition 
-			  NextState=`TX;
+                           NextState <=`TX;
 		          end 
-                        end    
 
-                endcase 
+                endcase
 
-		PresentState=NextState;
-        end // system stall 
+                      
 
-      end //always block  
-       // opcode and uop valid sent to the pipeline ent to the pipeline 
+                end 
+             end // always block   
+
+        `POS_EDGE_FF(clk,reset,NextState,PresentState) ;  
+
+     
+      //************************************************************************************
+      // O U T P U T         L   O  G  I  C 
+      //**********************************************************************************
+ 
+
+           
+
+
+
 
 
 
            always@(posedge clk)
             begin 
-              if(reset)
-              begin 
-                opcode={`INST_WIDTH{1'b0}};
-                uop_valid_out=1'b0;
-                pc_out={`ADDR_WIDTH{1'b0}};
-              end 
-               if(IR_v)
+                if(IR_v)
                 begin 
                     opcode=InstructionRegister;
                     pc_out=ProgramCounter_previous; 
                 end 
               uop_valid_out=IR_v;
+              we <=1'b0; //as we never generate write request from fetch unit
+
+              
+              if(NextState==`TX || NextState==`WAIT )
+               begin
+                  
+                 Addr <= ProgramCounter;
+                 req_valid<= !system_flush & 1'b1;
+               end 
+               else begin
+                 Addr <= ProgramCounter;
+
+                 req_valid <=1'b0;
+              end
+                 
+
+
             end 		
 
-   assign Addr=Addr_reg;
-   assign req_valid=req_valid_reg;
-   assign we =we_reg ;
    // flush logic , to be extended later as development progresses  
    assign system_flush = branch_taken ;
 
