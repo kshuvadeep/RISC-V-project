@@ -32,7 +32,8 @@
 `include "logical_unit.v"  
 `include "Adder_int.v" 
 `include "branch_computation_unit.sv"
-
+`include "Mmu_unit.v"
+`include "Mmu_param.vh"
 
 module execution(
       input[6:0] instruction_type,
@@ -59,11 +60,20 @@ module execution(
       // sim only signals 
       input[`INST_WIDTH-1:0] instruction_in , 
       output reg[`ADDR_WIDTH-1:0] pc_out ,
-      output reg [`INST_WIDTH-1:0] instruction_out
+      output reg [`INST_WIDTH-1:0] instruction_out,
+
+      // Towards the Mem arbiter
+      output reg [`ADDR_WIDTH-1:0] addr,
+      inout [`DATA_WIDTH-1:0] data,
+      input data_valid ,
+      output we,
+      output req_valid,
+      input grant                              // from Mem arbiter grant 
+ 
  
       );
 
-      wire[`DATA_WIDTH-1:0] add_value_exe01,logical_value_exe01; 
+      wire[`DATA_WIDTH-1:0] add_value_exe01,logical_value_exe01, mem_result; 
       reg[`DATA_WIDTH-1:0] Execution_Result_exe01,Execution_Result_exe02; 
       wire result_valid_exe01;
       wire [`CTRL_LOGIC_WIDTH-1:0] ctrl_logic ;
@@ -74,7 +84,8 @@ module execution(
       reg uop_valid_intermediate;
       reg[`INST_WIDTH-1:0]  instruction_out0;
       wire [`ADDR_WIDTH-1:0] next_pc_wire;
-     
+     wire[`CTRL_MEM_WIDTH-1:0] ctrl_mem;
+    wire uop_is_mem_load, uop_is_mem_store,mem_op_completed; 
 
       //Registers
       //
@@ -92,7 +103,10 @@ module execution(
     .ctrl_logic(ctrl_logic),
     .uop_is_logic(uop_is_logic_nq),
     .uop_is_branch(uop_is_branch),
-     .ctrl_branch(ctrl_branch)
+     .ctrl_branch(ctrl_branch),
+     .ctrl_mem(ctrl_mem),
+     .uop_is_mem_load(uop_is_mem_load),
+     .uop_is_mem_store(uop_is_mem_store)
        ); 
   
       //execution units or datapath units 
@@ -137,7 +151,26 @@ module execution(
 );
 
 
-
+Mmu mmu_inst (
+    .clk(clk),
+    .reset(reset),
+    .uop_is_mem_load(uop_is_mem_load),
+    .uop_is_mem_store(uop_is_mem_store),
+    .uop_valid(uop_valid_intermediate),
+    .mem_stall(stall_from_exe),
+    .grant(grant),
+    .ctrl_mem(ctrl_mem),
+    .src1(data_src1),
+    .src2(data_src2),
+    .immediate(immediate),
+    .addr(addr),
+    .data(data),
+    .we(we),
+    .req_valid(req_valid),
+    .data_valid(data_valid),
+    .mem_result(mem_result),
+    .mem_op_completed(mem_op_completed)
+);
        //Datapath Muxing
 
       // valid qualification 
@@ -155,12 +188,16 @@ module execution(
             end 
              
             if(uop_is_add)
-            begin 	Execution_Result_exe01=add_value_exe01; end 
+           	Execution_Result_exe01=add_value_exe01; 
             else if(uop_is_logic) 
-            begin 	Execution_Result_exe01=logical_value_exe01; end 
+           	Execution_Result_exe01=logical_value_exe01; 
+             
+           else if(mem_op_completed & uop_is_mem_load) 
+                 Execution_Result_exe01=mem_result;
+         
           end // always block  
        
-      assign result_valid_exe01 =(uop_is_add| uop_is_logic) ;   // gate here for any execution error like overflow detection from adder etc in future
+      assign result_valid_exe01 =(uop_is_add| uop_is_logic | mem_op_completed & uop_is_mem_load) ;   // gate here for any execution error like overflow detection from adder etc in future
 
        //Flop the result for staging to WB 
          `POS_EDGE_FF(clk,reset,Execution_Result_exe01,Execution_Result_exe02)
@@ -175,15 +212,13 @@ module execution(
      
                 
 
-      assign  Execution_Result=Execution_Result_exe02;
 
     // stall the pipe in case of a branch instruction 
     //We will remove this constraints in future  
     // REVIEW : 
-      assign stall_from_exe=uop_is_branch;
+     // assign stall_from_exe=uop_is_branch;
       assign next_pc= next_pc_wire ;   
-  
-      
+     assign  Execution_Result = Execution_Result_exe02;
 
       
 

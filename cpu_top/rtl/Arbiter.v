@@ -13,7 +13,7 @@
 `define NOREQ 2'b00 
 `define REQ0 2'b10
 `define REQ1 2'b01
-`define BOTHREQ 2'b10
+`define BOTHREQ 2'b11
 
 module Arbiter(
     input clk,
@@ -24,7 +24,8 @@ module Arbiter(
     inout [`DATA_WIDTH-1:0] data_p0,
     input we_p0,
     output reg grant0,
-    input system_flush, 
+    input system_flush,
+    input system_stall , 
     // MMU interface
     input req1_valid,
     input [`ADDR_WIDTH-1:0] addr_p1,
@@ -43,6 +44,7 @@ module Arbiter(
     // Intermediate signals
     reg [`DATA_WIDTH-1:0] next_data;
     reg busy, PingPong ;
+    reg [`ADDR_WIDTH -1:0] addr_reg;
 
     // State registers
     reg [1:0] PresentState, NextState;
@@ -68,10 +70,17 @@ module Arbiter(
             PresentState<= 2'b0;
             NextState<= 2'b0;
             next_data <={`DATA_WIDTH{1'b0}};
-            PingPong <= 1'b0; 
+           //  PingPong <= 1'b0; 
 
         end else begin
-                
+               
+             if(busy)
+               begin 
+                  grant0 <=1'b0;
+                  grant1 <= 1'b0;
+                end 
+               else 
+               begin 
                case (req )
                
                 `NOREQ : begin 
@@ -88,27 +97,31 @@ module Arbiter(
  
                       end 
               `BOTHREQ :begin 
-                        PingPong <= ~PingPong ; 
+                        // PingPong <= ~PingPong ; 
          // a simple Ping pong Arbitration scheme , that can be easily scaled  
-                          if(PingPong)
-                           begin  
-                      	   grant0 <= 1'b1;
-                           grant1 <= 1'b0;
-                           end 
-                          else begin 
+                        //  if(PingPong)
+                        //   begin  
+                      	//   grant0 <= 1'b1;
+                        //   grant1 <= 1'b0;
+                        //   end
+
+          // since it's a data dependent machine i.e a simple 
+          // in order machine , data should be our first priority
+         // Fetched uop has no meaning if the younger instructions are not 
+        // executed   
                             grant0 <= 1'b0;
                            grant1 <= 1'b1;
-                           end 
 
                        end   
                      
                endcase 
+            end 
        end  
      end //always block  
 
     // State Machine for the data transmission protocol
     always @(posedge clk or posedge reset) begin
-        if (reset || NextState == `RESET) begin
+        if (reset || (NextState == `RESET) || system_flush) begin
             PresentState <= `RESET;
             addr <= {`ADDR_WIDTH{1'b0}};
             data_p0_reg <= {`DATA_WIDTH{1'b0}};
@@ -119,6 +132,7 @@ module Arbiter(
         end else begin
            
             // Update state
+            if(!system_stall )
             PresentState <= NextState;
           // if NextState is reset , deassert the Mem request 
 
@@ -126,7 +140,28 @@ module Arbiter(
         end
     end
 
-    // Next State logic State machine as a combo circuit 
+    // Next State logic State machine as a combo circuit
+
+   always@(posedge clk or posedge reset)
+   begin 
+
+      if (grant0) begin
+             addr_reg <= addr_p0;
+             if (we_p0)
+                next_data <= data_p0;
+        end else if (grant1) begin
+                 addr_reg <= addr_p1;
+                  if (we_p1)
+                     next_data <= data_p1;
+                 end
+
+          we <= we_p0 & grant0 | we_p1 & grant1 ;
+
+
+     end  //always block 
+
+
+ 
 
     always@(*)
        begin
@@ -134,6 +169,7 @@ module Arbiter(
           if(system_flush)
            NextState <= `RESET ;
 
+             
          else begin  
 
          case (PresentState)
@@ -145,47 +181,43 @@ module Arbiter(
 
                 `TX: begin
                     req_valid <= 1'b1;
+                     addr <= addr_reg;
                     // MUX for the arbiter input address and data
-                    if (grant0) begin
-                        addr <= addr_p0;
-                        if (we_p0)
-                            next_data <= data_p0;
-                    end else if (grant1) begin
-                        addr <= addr_p1;
-                        if (we_p1)
-                            next_data <= data_p1;
-                    end
-                    we <= (we_p0  | we_p1 )? 1'b1:1'b0 ;
-                    NextState <= `RX;
+                                       NextState <= `RX;
                     busy <= 1'b1;
                 end
 
                 `RX: begin
                     if (data_valid) begin
                         NextState <= `WAIT;
-                        next_data <= data;
+                      //  next_data <= data;
                         busy <= 1'b1;
                         // for ifetch unit
-                        if(grant0 & !we)
+                        if(req0_valid && !we)
                         data_p0_reg <=data ;
                        // for MMU unit 
-                        if(grant1 & !we)
+                        if(req1_valid && !we)
                         data_p1_reg <=data ;
                        
                     end
+                    else 
+                     NextState <=`RX;
                 end
 
                 `WAIT: begin
-                    if (grant0 || grant1) begin
+                    if (grant0 || grant1) 
                         NextState <= `TX;
-                    end
+                      else 
+                        NextState <=`RESET;
                     busy <= 1'b0;
-                    we <= 1'b0;
+                  //  we <= 1'b0;
                     req_valid<= 1'b0 ;
                 end
 
                 default: NextState <= `RESET; // Default to reset state
             endcase
+
+            
        end 
     end  //always_comb block 
 

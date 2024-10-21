@@ -71,7 +71,3 @@ module WriteBack(
 
 
  endmodule      
-                                  
-                       
-                    
-

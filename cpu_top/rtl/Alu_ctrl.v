@@ -2,6 +2,7 @@
 `timescale 1ns / 1ps
 `include "system_param.vh"
 `include "Execution_param.vh"
+`include "Mmu_param.vh"
 `include "Macros.vh"
 `include "rvi32_instructions.vh"
 
@@ -19,8 +20,11 @@ module Alu_ctrl(
      output reg uop_is_add,
      output reg[`CTRL_LOGIC_WIDTH-1:0] ctrl_logic , //logic unit ctrl
      output reg uop_is_logic ,
-   output reg[`CTRL_BRANCH_WIDTH-1:0] ctrl_branch, // branch unit ctrl 
-     output reg uop_is_branch
+     output reg[`CTRL_BRANCH_WIDTH-1:0] ctrl_branch, // branch unit ctrl 
+     output reg uop_is_branch, 
+      output reg[`CTRL_MEM_WIDTH-1:0] ctrl_mem ,
+      output reg uop_is_mem_load,
+      output reg uop_is_mem_store
         ); 
 
    // Need to extend this further for other kinds of uop in execution unit
@@ -121,11 +125,51 @@ module Alu_ctrl(
                    ctrl_branch={`CTRL_BRANCH_WIDTH{1'b0}};
              end       // branch control 
 
-               
+        //*************************************************************************//
+       // M E M        C O N T R O L 
+       //************************************************************************
+
+      if(instruction_type == `LOAD_OP || instruction_type == `STORE_OP) 
+         begin 
+         if (instruction_type == `LOAD_OP) 
+          begin
+	      uop_is_mem_load = 1'b1;  // Set load memory operation flag
+              uop_is_mem_store = 1'b0;  // Set load memory operation flag
+             
+
+        case(funct3)
+            `LOAD_LB: ctrl_mem = `CTRL_LB;
+            `LOAD_LH: ctrl_mem = `CTRL_LH;
+            `LOAD_LW: ctrl_mem = `CTRL_LW;
+            `LOAD_LBU: ctrl_mem = `CTRL_LBU;
+            `LOAD_LHU: ctrl_mem = `CTRL_LHU;
+            default: ctrl_mem = {`CTRL_MEM_WIDTH{1'b0}}; // Default no-op
+        endcase
+      end 
+    else if (instruction_type == `STORE_OP) 
+    begin
+         uop_is_mem_store = 1'b1;
+         uop_is_mem_load = 1'b0;
+        case(funct3)
+            `STORE_SB: ctrl_mem = `CTRL_SB;
+            `STORE_SH: ctrl_mem = `CTRL_SH;
+            `STORE_SW: ctrl_mem = `CTRL_SW;
+            default: ctrl_mem = {`CTRL_MEM_WIDTH{1'b0}}; // Default no-op
+        endcase
+    end
+  end
+ else 
+  begin 
+    uop_is_mem_load = 1'b0;  // No memory load operation
+    uop_is_mem_store = 1'b0;  // No memory store operation
+    ctrl_mem = {`CTRL_MEM_WIDTH{1'b0}}; // Reset memory control signals
+   end
 
            
  
       end //always block
+
+   
     
         //write an assertion to check for the exclusivity of these operators like uop_logic and uop_add should not be high at the same time 
         // Need to see if we can write a predicate for the uopcode for scalability for further extensions with ease  

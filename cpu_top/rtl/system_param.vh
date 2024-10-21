@@ -10,3 +10,4 @@
 `define ADDR_WIDTH 32
 `define OPCODE_WIDTH 7 
 `define IMMEDIATE_WIDTH 21
+`define MEM_DATA_WIDTH 8 

@@ -28,18 +28,19 @@ module branch_cmp_unit(
   assign  imm_branch_extended = {{20{immediate[12]}}, immediate[12:0]}  ; 
 
 
-  sign_extended_right_shift  branch_shift (
-    .data_in(imm_branch_extended),        // Input data
-    .shift_amount(2),                     // Shift by 2 bits (equivalent to divide by 4)
-    .data_out(imm_branch_extended_shifted) // Output after shifting
-  );
-
-// Instantiate the module for imm_jump_extended_shifted
-sign_extended_right_shift  jump_shift (
-    .data_in(imm_jump_extended),          // Input data
-    .shift_amount(2),                     // Shift by 2 bits (equivalent to divide by 4)
-    .data_out(imm_jump_extended_shifted)  // Output after shifting
-);
+// This is not needed any more , it was done to support a 4 byte word addressed memory 
+//  sign_extended_right_shift  branch_shift (
+//    .data_in(imm_branch_extended),        // Input data
+//    .shift_amount(2),                     // Shift by 2 bits (equivalent to divide by 4)
+//    .data_out(imm_branch_extended_shifted) // Output after shifting
+//  );
+//
+//// Instantiate the module for imm_jump_extended_shifted
+//sign_extended_right_shift  jump_shift (
+//    .data_in(imm_jump_extended),          // Input data
+//    .shift_amount(2),                     // Shift by 2 bits (equivalent to divide by 4)
+//    .data_out(imm_jump_extended_shifted)  // Output after shifting
+//);
  
  always@(*) // always comb 
   begin 
@@ -61,30 +62,29 @@ sign_extended_right_shift  jump_shift (
        case( ctrl_branch) 
           
             `CTRL_JAL : begin 
-                       next_pc=pc+imm_jump_extended_shifted;
+                       next_pc=pc+imm_jump_extended;
                        end
            `CTRL_JALR : begin 
-                       next_pc = (src1 + imm_jump_extended_shifted) & ~32'b1; 
+                       next_pc = (src1 + imm_jump_extended) & ~32'b1; 
                        end
 
             `CTRL_BEQ: begin 
                        if(src1==src2)begin 
-                       next_pc = pc+imm_branch_extended_shifted;
+                       next_pc = pc+imm_branch_extended;
                        branch_taken=1'b1;
                        end 
                       else begin 
-                        next_pc=pc+1; //considering 32 bit data is assigned an address, to do : change it to byte level
+                        next_pc=pc+4; //considering 32 bit data is assigned an address, to do : change it to byte level
                         branch_taken =1'b0;
                        end   
                        
                        end 
             `CTRL_BNE : begin 
                        if(src1!==src2)begin 
-                       next_pc = pc+imm_branch_extended_shifted;
+                       next_pc = pc+imm_branch_extended;
                        branch_taken=1'b1;
                        end 
                       else begin 
-                        next_pc=pc+1; //considering 32 bit data is assigned an address, to do : change it to byte level
                         branch_taken =1'b0;
                        end   
                        
@@ -92,11 +92,11 @@ sign_extended_right_shift  jump_shift (
 
              `CTRL_BLT :   begin 
                        if(src1<src2)begin 
-                       next_pc = pc+imm_branch_extended_shifted;
+                       next_pc = pc+imm_branch_extended;
                        branch_taken=1'b1;
                        end 
                       else begin 
-                        next_pc=pc+1; //considering 32 bit data is assigned an address, to do : change it to byte level
+                        next_pc=pc+4; //considering 32 bit data is assigned an address, to do : change it to byte level
                         branch_taken =1'b0;
                        end   
                        
@@ -104,11 +104,11 @@ sign_extended_right_shift  jump_shift (
              
                  `CTRL_BGE:  begin 
                        if(src1>=src2)begin 
-                       next_pc = pc+imm_branch_extended_shifted;
+                       next_pc = pc+imm_branch_extended;
                        branch_taken=1'b1;
                        end 
                       else begin 
-                        next_pc=pc+1; //considering 32 bit data is assigned an address, to do : change it to byte level
+                        next_pc=pc+4; //considering 32 bit data is assigned an address, to do : change it to byte level
                         branch_taken =1'b0;
                        end   
                        
@@ -116,11 +116,11 @@ sign_extended_right_shift  jump_shift (
                // to do :signed and unsigned differentiation will be done during the structural coding 
                `CTRL_BLTU: begin 
                        if(src1<src2)begin 
-                       next_pc = pc+imm_branch_extended_shifted;
+                       next_pc = pc+imm_branch_extended;
                        branch_taken=1'b1;
                        end 
                       else begin 
-                        next_pc=pc+1; //considering 32 bit data is assigned an address, to do : change it to byte level
+                        next_pc=pc+4; //considering 32 bit data is assigned an address, to do : change it to byte level
                         branch_taken =1'b0;
                        end   
                        
@@ -128,11 +128,11 @@ sign_extended_right_shift  jump_shift (
   
                   `CTRL_BGEU:begin 
                        if(src1>=src2)begin 
-                       next_pc = pc+imm_branch_extended_shifted;
+                       next_pc = pc+imm_branch_extended;
                        branch_taken=1'b1;
                        end 
                       else begin 
-                        next_pc=pc+1; //considering 32 bit data is assigned an address, to do : change it to byte level
+                        next_pc=pc+4; //considering 32 bit data is assigned an address, to do : change it to byte level
                         branch_taken =1'b0;
                        end   
                        

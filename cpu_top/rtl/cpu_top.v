@@ -7,6 +7,7 @@
 `timescale 1ns / 1ps
  `include "system_param.vh"
  `include  "rvi32_instructions.vh"
+`include "Arbiter.v"
  `include "Fetch.v"
 `include "Decode.v"
 `include "execution.v"
@@ -30,10 +31,11 @@
   //************************************************
   // Wires declaration  
   //*********************************************
-wire [`ADDR_WIDTH - 1:0] addr_wire;
-wire [`DATA_WIDTH - 1:0] data_wire;
-wire we_wire;
-wire req_valid_wire;
+wire [`ADDR_WIDTH - 1:0] addr_ifetch,addr_mem;
+wire [`DATA_WIDTH - 1:0] data_inst,data_mem; 
+wire [`DATA_WIDTH - 1:0] data_mmu; 
+wire we_ifetch,we_mem;
+wire req_valid_ifetch,req_valid_mem,grant_ifetch,grant_mmu;
 wire [`INST_WIDTH-1:0] opcode_wire ;
 wire [`OPCODE_WIDTH-1:0] instruction_wire;
 wire system_stall_wire;
@@ -79,22 +81,45 @@ wire branch_taken;
   // Only to be used for simulation  
   //********************************************************************************
 
+ Arbiter arbiter_inst (
+    .clk(clk),                        //clk
+    .reset(reset),
+    .req0_valid(req_valid_ifetch),    // Ifetch req to arbiter 
+    .addr_p0(addr_ifetch),            //addr from ifetch 
+    .data_p0(data_inst),              // data to ifetch 
+    .we_p0(we_ifetch),                // we to ifetch though not necessary
+    .system_flush(system_flush),     // flush the requests in case of the branch taken 
+    .system_stall(source_not_ready_wire), // stall excludes stall from exe ,as it is created for mem request 
+    .grant0(grant_ifetch),                  // grant from Arbiter 
+    .req1_valid(req_valid_mem),                // MMu req to arbiter , currently tied to 0
+    .addr_p1(addr_mem),                // addr from mmu
+    .data_p1(data_mem),                //data from mmu
+    .we_p1(we_mem),                    //we from mmu
+    .grant1(grant_mmu),                  //grant from arbiter to mmu
+    .req_valid(req_valid),           // req valid to Memory bus 
+    .addr(Addr),                     // addr in Memory bus 
+    .data(Data),                     // data in memory bus 
+    .we(we),                         // we in Memory bus 
+    .data_valid(data_valid)           //data valid from Mem 
+  );
 
 
 
 Fetch #(
-    .MEM_DEPTH(8),        // Set the memory depth
+    .MEM_DEPTH(64),        // Set the memory depth
     .DATA_WIDTH(32)       // Set the data width
      ) 
         u_fetch(
-    .Addr(addr_wire),        // Address output
-    .Data(Data),        // Data inout
-    .we(we_wire),            // Write enable output
-    .req_valid(req_valid_wire),  // Request valid output
-    .clk(clk),              // Clock input
-    .reset(reset),          // Reset input
-    .data_valid(data_valid), // Data valid input
-    .system_stall(stall_fetch), //stall 
+    .Addr(addr_ifetch),        // Address output
+    .Data(data_inst),        // Data inout
+    .we(we_ifetch),            // Write enable output
+    .req_valid(req_valid_ifetch),  // Request valid output
+    .clk(clk),                      // Clock input
+    .reset(reset),                  // Reset input
+    .grant(grant_ifetch),          //grant from arbiter 
+    .data_valid(data_valid),      // Data valid input
+    .system_stall(stall_fetch),  //stall
+    .Mem_stall(stall_from_exe), 
     .opcode(opcode_wire),         // opcode 
     .uop_valid_out(uop_valid_fetch), // uop valid 
     .pc_out(pc_out_fetch)   ,          // program counter required to compute branch instructions
@@ -155,8 +180,17 @@ Fetch #(
     .pc_in(pc_out_decode)  ,                      // program counter input 
     .next_pc(pc_out_branch) ,                       // program counter output
     .stall_from_exe(stall_from_exe), 
-    .branch_taken(branch_taken)                  //branch taken or not , 0 for jmp instructions  
-      )     ;
+    .branch_taken(branch_taken) , 
+
+      // Towards the Mem arbiter
+     .addr(addr_mem),
+     .data(data_mem),
+     .data_valid(data_valid),
+     .we(we_mem),
+     .req_valid(req_valid_mem),
+      . grant(grant_mmu)    
+    ); 
+
 
     //Skipping memory related operations for now 
      
@@ -218,13 +252,14 @@ Fetch #(
 
 
         // Stall logic 
-       assign    stall_fetch=source_not_ready_wire; 
-       assign    stall_decode =source_not_ready_wire ; 
+       assign    stall_fetch=source_not_ready_wire ;
+       assign    stall_decode=source_not_ready_wire ;
+      // removing stall from exe dependency for now ,as when the stall for the exe will happen , 
+      // the arbiter will be busy in serving requests from memory , so the fetch unit will not receive and 
+     // forward any new instruction into the pipeline  
+     //  assign    stall_fetch =source_not_ready_wire | stall_from_exe ; 
+     //  assign    stall_decode =source_not_ready_wire | stall_from_exe ; 
 
-       //output Glue logic
       
-      assign  Addr=addr_wire ;
-      assign  we=we_wire;
-       assign req_valid=req_valid_wire ;
    
    endmodule    

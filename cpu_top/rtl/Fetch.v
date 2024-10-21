@@ -24,6 +24,7 @@
 	input reset,
 	input data_valid,
         input system_stall ,
+        input Mem_stall, 
     // branch address and jump address from branch handling unit 
         input branch_taken ,
         input[`ADDR_WIDTH-1:0]  next_pc,
@@ -48,6 +49,8 @@
      // instruction register 
      reg[31:0] InstructionRegister;
      reg IR_v; //Instruction regsiter valid
+     wire Extend_wait_state  ; 
+     reg Extend_wait_state_flopped  ; 
 
 
 
@@ -79,7 +82,7 @@
           end
 
          
-          if(reset || system_flush)
+          if(reset )
           begin 
              req_valid=1'b0;
              we = 1'b0;
@@ -89,6 +92,14 @@
             pc_out={`ADDR_WIDTH{1'b0}};
 
           end 
+         //only flush the requests , existing branch uop shouldn't be flushed  
+          if(system_flush)
+           begin 
+              req_valid=1'b0;
+             we = 1'b0;
+             Addr = {`ADDR_WIDTH{1'b0}} ;
+         end 
+
 
 	  
          
@@ -104,8 +115,7 @@
         always @(posedge clk or posedge reset  )  
         begin
 
-            if( !system_stall || branch_taken || !reset)   
-          begin 
+              
 	            
            // Program Counter update logic 
            //PC is updated only when PresentState is RX 
@@ -114,22 +124,26 @@
                   begin 
                   ProgramCounter_previous <= ProgramCounter ;  
                   ProgramCounter<=next_pc;
+                  IR_v <=1'b0;
                   end
-            else  if(NextState == `RX )
+
+            else  if( !system_stall  && !reset && !Mem_stall && !system_flush )  
+                   begin 
+
+
+                 if (NextState == `RX )
                  begin
                   ProgramCounter_previous <= ProgramCounter ;  
-                  ProgramCounter <= ProgramCounter+1; 
-                 end 
+                  ProgramCounter <= ProgramCounter+4; 
 
                     
 
                 //Instruction Register & valid  Update 
                
-                if(NextState == `RX )
-                 begin
                   InstructionRegister<=Data;
-	          IR_v<=1'b1;
-                   end 
+	          IR_v<= !system_stall  ; // in short if system stall don't assert it as valid ,
+                                         // assert only when it recovers from the stall 
+                  end 
                  else 
                   IR_v <=1'b0;
 
@@ -152,14 +166,16 @@
       //TX & RX  S T A T E     M  A  C  H  I  N  E         L   O  G  I  C 
       //**********************************************************************************
 
-
+    // During the Memory stall , the Arbiter serves the Mmu unit on priority 
+    // However if there was an ongoing fetch operations being served currently 
+    //we  
 
 
      always@(*)  //always comb 
         begin 
        
  
-        if( !system_stall || branch_taken || !reset)   
+        if( (!system_stall || branch_taken) & !reset)   
         begin 
 
        //in case of branch taken , unconditionally assume `TX state 
@@ -182,7 +198,7 @@
 		             end
 
                       `TX:   begin 
-                            if(grant)
+                            if(grant & !system_stall & !Mem_stall)
 			    	NextState <=`WAIT;
                              else 
                                 NextState <= `TX;
@@ -190,15 +206,21 @@
  			    end 
 		     `WAIT :  begin
 
-                              if(data_valid)
+                              if(data_valid && !system_stall && !Mem_stall && !Extend_wait_state_flopped)
 			      NextState <= `RX;
-                               else 
-                                 NextState<=`WAIT;
-
-                              end 
+                               else if(Mem_stall)
+                               NextState<=`TX;
+                             
+                              if(Extend_wait_state_flopped)
+                               NextState<= `WAIT;
+                            
+                               end 
 
 		    `RX : begin
-                           NextState <=`TX;
+                           if(Mem_stall)
+                          	 ProgramCounter <= ProgramCounter_previous;
+                                
+                          	 NextState <=`TX;
 		          end 
 
                 endcase
@@ -208,7 +230,8 @@
                 end 
              end // always block   
 
-        `POS_EDGE_FF(clk,reset,NextState,PresentState) ;  
+        `POS_EDGE_FF_EN(clk,reset,!system_stall,NextState,PresentState)
+        `POS_EDGE_FF(clk,reset,Extend_wait_state,Extend_wait_state_flopped)
 
      
       //************************************************************************************
@@ -230,7 +253,7 @@
                     opcode=InstructionRegister;
                     pc_out=ProgramCounter_previous; 
                 end 
-              uop_valid_out=IR_v;
+              uop_valid_out=IR_v & !Mem_stall & !system_flush;
               we <=1'b0; //as we never generate write request from fetch unit
 
               
@@ -248,7 +271,14 @@
                  
 
 
-            end 		
+            end 	
+
+   //special case detection // bug description is in Joplin notebook  
+    
+      assign Extend_wait_state =  (PresentState==`WAIT & ! data_valid & system_stall) ? 1'b1:1'b0;
+            
+
+	
 
    // flush logic , to be extended later as development progresses  
    assign system_flush = branch_taken ;
