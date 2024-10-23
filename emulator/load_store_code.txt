@@ -1,0 +1,64 @@
+//***************************************************************
+//  T e s t c a s e : simple load store testcase 
+//***************************************************************
+
+// addi x6,x0,20 2 li t1 ,20 # first write , t1 holds the address and t2 holds the data
+Mem[0] = 8'h13;
+Mem[1] = 8'h03;
+Mem[2] = 8'h40;
+Mem[3] = 8'h01;
+
+// addi x7,x0,14 3 li t2 , 14
+Mem[4] = 8'h93;
+Mem[5] = 8'h03;
+Mem[6] = 8'he0;
+Mem[7] = 8'h00;
+
+// sb x7,0(x6) 4 sb t2 ,(t1)
+Mem[8] = 8'h23;
+Mem[9] = 8'h00;
+Mem[10] = 8'h73;
+Mem[11] = 8'h00;
+
+// addi x6,x0,24 7 li t1 ,24 # first write , t1 holds the address and t2 holds the data
+Mem[12] = 8'h13;
+Mem[13] = 8'h03;
+Mem[14] = 8'h80;
+Mem[15] = 8'h01;
+
+// addi x7,x0,23 8 li t2 , 23
+Mem[16] = 8'h93;
+Mem[17] = 8'h03;
+Mem[18] = 8'h70;
+Mem[19] = 8'h01;
+
+// sb x7,0(x6) 9 sb t2 ,(t1)
+Mem[20] = 8'h23;
+Mem[21] = 8'h00;
+Mem[22] = 8'h73;
+Mem[23] = 8'h00;
+
+// lw x28,20(x0) 11 lw t3 , 20 # load from address 20
+Mem[24] = 8'h03;
+Mem[25] = 8'h2e;
+Mem[26] = 8'h40;
+Mem[27] = 8'h01;
+
+// lw x29,24(x0) 12 lw t4 , 24 # load from address 24
+Mem[28] = 8'h83;
+Mem[29] = 8'h2e;
+Mem[30] = 8'h80;
+Mem[31] = 8'h01;
+
+// add x30,x28,x29 13 add t5 ,t3 ,t4
+Mem[32] = 8'h33;
+Mem[33] = 8'h0f;
+Mem[34] = 8'hde;
+Mem[35] = 8'h01;
+
+
+for(i=36; i<MEM_DEPTH; i=i+1) begin
+    Mem[i] = i;  // Just for creating a test case
+end
+
+data_valid_reg = 1'b0;

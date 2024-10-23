@@ -1,0 +1,17 @@
+//***************************************************************
+//  T e s t c a s e : Multiply with add and loop 
+//***************************************************************
+
+Mem[0] = 32'h00a00313; // addi x6,x0,10 6 li t1 ,10
+Mem[1] = 32'h00f00393; // addi x7,x0,15 7 li t2 , 15
+Mem[2] = 32'h00000e13; // addi x28,x0,0 9 li t3 ,0
+Mem[3] = 32'h00100e93; // addi x29,x0,1 11 li t4 , 1
+Mem[4] = 32'h007e0e33; // add x28,x28,x7 13 LOOP :add t3 ,t3 ,t2
+Mem[5] = 32'h41d30333; // sub x6,x6,x29 14 sub t1 ,t1,t4
+Mem[6] = 32'hfe031ce3; // bne x6,x0,0xfffffff8 15 bnez t1 , LOOP
+
+for(i=7; i<MEM_DEPTH; i=i+1) begin
+    Mem[i] = i;  // Just for creating a test case
+end
+
+data_valid_reg = 1'b0;
