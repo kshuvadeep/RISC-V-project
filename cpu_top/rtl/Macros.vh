@@ -23,3 +23,18 @@ always @(negedge clk or posedge reset) begin \
     else \
         dout <= din; \
 end
+
+//`define CLK_GATE(clk_in, en, clk_out) \
+// always@(posedge clk_in) begin \ 
+//   if (en) \
+//   clk_out <= clk_in; \
+// end 
+
+`define CLK_GATE(clk_in, en, clk_out) \
+reg clk_out; \
+ always @(posedge clk_in or negedge en) begin \
+   if (!en) \
+     clk_out <= 1'b0; \
+   else \
+     clk_out <= clk_in; \
+ end

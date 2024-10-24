@@ -36,9 +36,13 @@ module Uart_module(
       wire wrt_en_rx, rd_en_rx ; 
       wire tx_enable ,rx_enable  ;
       wire tx_full , tx_empty ;
+      wire csn_uart ; // whether the Uart module is selected or not
+
+       // chip select login 
+       assign csn_uart =  (addr[`ADDR_WIDTH: `ADDR_WIDTH-`IO_SELECT] ==`UART_SELECT ) ? 1'b0 :1'b0;
 
       //rd and wrt enbale logic 
-      assign wrt_en_tx = req_valid & (addr[`ADDR_WIDTH: `ADDR_WIDTH-`IO_SELECT] ==4'b0001 ) & we ;
+      assign wrt_en_tx = req_valid & csn_uart & we ;
       assign rd_en_tx = !tx_empty & tx_enable ;      
 
  
@@ -80,6 +84,7 @@ module Uart_module(
         .txd(txd)
     );
      
-     assign data_valid = !tx_full ; // needs to  modify this for the Receiver module
+     assign data_valid = csn_uart? !tx_full :1'bz; // needs to  modify this for the Receiver module
+
        
 endmodule

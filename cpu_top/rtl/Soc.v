@@ -10,7 +10,9 @@
 module Soc #(parameter MEM_DEPTH=64 ,parameter DATA_WIDTH=32)
    (
 	input clk ,
-	input reset
+	input reset,
+        output txd,
+        input rxd 
 
 	// to be added ports for debug 
 	);
@@ -20,7 +22,8 @@ module Soc #(parameter MEM_DEPTH=64 ,parameter DATA_WIDTH=32)
 	wire [`ADDR_WIDTH-1:0] addr;
 	wire req_valid,valid_data ,we;
 
-     cpu_top #(MEM_DEPTH,DATA_WIDTH)	core1(.clk(clk),
+     cpu_top #(MEM_DEPTH,DATA_WIDTH)	core1(
+                   .clk(clk),
 	          .reset(reset),
 		  .Addr(addr),
 		  .Data(data),
@@ -30,7 +33,8 @@ module Soc #(parameter MEM_DEPTH=64 ,parameter DATA_WIDTH=32)
 	  );
 
 
-	  Mem_top #(MEM_DEPTH,DATA_WIDTH) Mem(.clk(clk),
+      Mem_top #(MEM_DEPTH,DATA_WIDTH) Mem(
+                   .clk(clk),
 	          .reset(reset),
 		  .addr(addr),
 		  .Data(data),
@@ -38,6 +42,19 @@ module Soc #(parameter MEM_DEPTH=64 ,parameter DATA_WIDTH=32)
 		  .data_valid(valid_data),
 		  .WE(we)
 	  );
+          
+        Uart_module Uart (
+        .clk(clk),
+        .reset(reset),
+        .addr(addr),
+        .data(data),
+        .we(we),
+        .req_valid(req_valid),
+        .data_valid(data_valid),
+        .txd(txd),
+        .rxd(rxd)
+    );
+
 
     endmodule 	  
 

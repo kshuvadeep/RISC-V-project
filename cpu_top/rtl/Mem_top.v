@@ -15,11 +15,13 @@
        integer i ;
        reg[`DATA_WIDTH-1:0] data_reg;
        reg data_valid_reg;
+       wire csn_mem;
              // 1Read /1 Write Memory model
         //Main Memory 
        reg[`MEM_DATA_WIDTH-1:0] Mem[0:MEM_DEPTH-1];
  
       
+       assign csn_mem =  (addr[`ADDR_WIDTH: `ADDR_WIDTH-`IO_SELECT] ==`MEM_SELECT ) ? 1'b0 :1'b0;
       // MEMORY INITIALIZATION 
 
         initial begin 
@@ -52,8 +54,10 @@
 		   Mem[addr] <=Data;
 		  // data_valid_reg <=1'b1;
 	           end 
-                  
-                data_valid <= req_valid ;// simplyfying     
+                 if(csn_mem) 
+                data_valid <= req_valid ;// simplyfying 
+                 else 
+                   data_valid <= 1'bz;    
                               
               end // if reset else block 
 
@@ -61,7 +65,7 @@
 
 	   end  //always block 
 	    
-	    assign Data=WE? {`DATA_WIDTH{1'bz}}: data_reg; // release the data bus from output in case of write request  
+	    assign Data=csn_mem ? : (WE? {`DATA_WIDTH{1'bz}}: data_reg) : 1'bz ; // release the data bus from output in case of write request  
 	   // assign data_valid=data_valid_reg;
 
 	    //there are some loopholes in data_valid logic , need to fix it
