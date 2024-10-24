@@ -10,4 +10,10 @@
 `define ADDR_WIDTH 32
 `define OPCODE_WIDTH 7 
 `define IMMEDIATE_WIDTH 21
-`define MEM_DATA_WIDTH 8 
+`define MEM_DATA_WIDTH 8
+`define IO_SELECT 4 
+
+//CSN SELECT
+
+`define MEM_SELECT 4'b0000
+`define UART_SELECT 4'b0001 
