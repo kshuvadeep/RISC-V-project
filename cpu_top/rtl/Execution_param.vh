@@ -5,7 +5,14 @@
 `define CTRL_SUB 2'b10
 `define CTRL_ADDI 2'b11
 
-//defines for shifter 
+//defines for shifter
+`define CTRL_SHIFT_WIDTH 3  
+`define CTRL_SLL 3'b001   // shift left logical 
+`define CTRL_SLLI 3'b010  //shift left logical immediate
+`define CTRL_SRL 3'b011  
+`define CTRL_SRLI 3'b100
+`define CTRL_SRA 3'b101   //shift right logical 
+`define CTRL_SRAI  3'b110 
 
 
 //defines for logic 

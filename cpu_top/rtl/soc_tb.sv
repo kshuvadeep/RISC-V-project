@@ -65,7 +65,7 @@ module soc_tb;
         #100;
 
 	#10000;
-	$finish; 
+	//$finish; 
         // End the simulation
       //  $finish;
     end

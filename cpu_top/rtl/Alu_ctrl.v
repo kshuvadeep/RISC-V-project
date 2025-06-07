@@ -20,6 +20,8 @@ module Alu_ctrl(
      output reg uop_is_add,
      output reg[`CTRL_LOGIC_WIDTH-1:0] ctrl_logic , //logic unit ctrl
      output reg uop_is_logic ,
+     output reg [`CTRL_SHIFT_WIDTH-1:0] ctrl_shift, //shift unit control 
+     output reg uop_is_shift, 
      output reg[`CTRL_BRANCH_WIDTH-1:0] ctrl_branch, // branch unit ctrl 
      output reg uop_is_branch, 
       output reg[`CTRL_MEM_WIDTH-1:0] ctrl_mem ,
@@ -82,7 +84,7 @@ module Alu_ctrl(
              endcase 
             end
 
-	if(instruction_type==`I_TYPE_OP)
+	else if(instruction_type==`I_TYPE_OP)
            begin 
             case(funct3)
              `I_ORI: begin ctrl_logic = `CTRL_ORI; end
@@ -91,9 +93,52 @@ module Alu_ctrl(
               default : begin ctrl_logic ={`CTRL_LOGIC_WIDTH{1'b0}}; end 
              endcase 
             end 
+        else 
+          ctrl_logic={`CTRL_LOGIC_WIDTH{1'b0}};
  
             uop_is_logic = (| ctrl_logic); // the encoding is done in such a way
-     end // gating of uop valid  
+     end // gating of uop valid 
+
+         //**********************************************************************
+        // S H I F T        C O N T R O L 
+       //************************************************************************
+           
+         
+        if(instruction_type==`R_TYPE_OP)
+          begin 
+            case(funct3) 
+             `R_SLL :ctrl_shift = `CTRL_SLL ; //shift left logical 
+             `R_SRL :begin 
+                      if(funct7==`FUNCT7_SRA) 
+                        ctrl_shift = `CTRL_SRA;  //shift right logical
+                      else 
+                        ctrl_shift = `CTRL_SRL;
+                     end 
+              default:ctrl_shift ={`CTRL_SHIFT_WIDTH{1'b0}};
+           endcase
+           end   
+
+          else   if(instruction_type==`I_TYPE_OP)
+          begin 
+            case(funct3) 
+             `I_SLLI :ctrl_shift = `CTRL_SLLI ; //shift left logical 
+             `I_SRLI :begin 
+                      if(funct7==`FUNCT7_SRAI) 
+                        ctrl_shift = `CTRL_SRAI;  //shift right logical
+                      else 
+                        ctrl_shift = `CTRL_SRLI;
+                     end 
+              default:ctrl_shift ={`CTRL_SHIFT_WIDTH{1'b0}};
+           endcase
+           end   
+            else 
+              ctrl_shift ={`CTRL_SHIFT_WIDTH{1'b0}};
+          
+
+
+              uop_is_shift= (| ctrl_shift); 
+       
+ 
 
        //*************************************************************************//
        // B R A N C H        C O N T R O L 

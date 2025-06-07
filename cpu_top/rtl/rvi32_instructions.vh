@@ -38,6 +38,10 @@
 `define I_XORI      3'b100
 `define I_ORI       3'b110
 `define I_ANDI      3'b111
+`define I_SLLI      3'b001
+`define I_SRLI      3'b101
+`define FUNCT7_SRAI  7'b0100000 
+`define FUNCT7_SRA   7'b0100000  
 
 // Load Instructions
 `define LOAD_OP    7'b0000011
@@ -85,4 +89,5 @@
 // Function Code Bit Fields
 `define FUNCT3   2:0
 `define FUNCT7   6:0
+
 

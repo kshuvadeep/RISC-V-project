@@ -35,7 +35,7 @@ module logical_unit
         begin 
             logical_src1 = {`DATA_WIDTH{1'b0}};
             logical_src2 = {`DATA_WIDTH{1'b0}};
-            logical_value_reg = {`DATA_WIDTH{1'b0}};
+           
         end 
         else begin
             logical_src1 = src1;
@@ -50,6 +50,9 @@ module logical_unit
 
     always@(*)
     begin
+       if(reset)
+       logical_value_reg<=0;
+       else begin 
        if(uop_valid_in)
        begin 
         case(logic_type)
@@ -62,6 +65,7 @@ module logical_unit
             default:                logical_value_reg = {`DATA_WIDTH{1'b0}};
         endcase
        end //uop valid 
+      end //if else 
     end 
 
     assign logical_value = logical_value_reg;

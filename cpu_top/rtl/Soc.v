@@ -6,9 +6,10 @@
 `include "cpu_top.v"
 `include "Mem_top.v"
 `include "system_param.vh"
+`include "Uart_module.v"
 
-module Soc #(parameter MEM_DEPTH=64 ,parameter DATA_WIDTH=32)
-   (
+
+module Soc (
 	input clk ,
 	input reset,
         output txd,
@@ -17,27 +18,29 @@ module Soc #(parameter MEM_DEPTH=64 ,parameter DATA_WIDTH=32)
 	// to be added ports for debug 
 	);
 
-	wire [`DATA_WIDTH-1:0] data;
+	wire [`DATA_WIDTH-1:0] rd_data,wrt_data;
 	//localparam ADDR_WIDTH =$clog2(MEM_DEPTH);
 	wire [`ADDR_WIDTH-1:0] addr;
 	wire req_valid,valid_data ,we;
 
-     cpu_top #(MEM_DEPTH,DATA_WIDTH)	core1(
+     cpu_top core1(
                    .clk(clk),
 	          .reset(reset),
 		  .Addr(addr),
-		  .Data(data),
+		  .rd_data(rd_data),
+                  .wrt_data(wrt_data),
 		  .req_valid(req_valid),
 		  .data_valid(valid_data),
 		  .we(we)
 	  );
 
 
-      Mem_top #(MEM_DEPTH,DATA_WIDTH) Mem(
+      Mem_top  Mem(
                    .clk(clk),
 	          .reset(reset),
 		  .addr(addr),
-		  .Data(data),
+		  .rd_data(rd_data),
+		  .wrt_data(wrt_data),
 		  .req_valid(req_valid),
 		  .data_valid(valid_data),
 		  .WE(we)
@@ -47,10 +50,11 @@ module Soc #(parameter MEM_DEPTH=64 ,parameter DATA_WIDTH=32)
         .clk(clk),
         .reset(reset),
         .addr(addr),
-        .data(data),
-        .we(we),
+         .rd_data(rd_data),
+        .wrt_data(wrt_data),
+         .we(we),
         .req_valid(req_valid),
-        .data_valid(data_valid),
+        .data_valid(valid_data),
         .txd(txd),
         .rxd(rxd)
     );

@@ -10,15 +10,16 @@
 `include "Arbiter.v"
  `include "Fetch.v"
 `include "Decode.v"
-`include "execution.v"
+`include "execution.sv"
 `include "WriteBack.v"
 `include "Registers_ISA.v"
 
 
- module cpu_top #(parameter MEM_DEPTH=64 ,parameter DATA_WIDTH=32 ) 
+ module cpu_top 
    (
 	output[`ADDR_WIDTH -1:0] Addr ,
-	inout[`DATA_WIDTH-1:0] Data,
+	input[`DATA_WIDTH-1:0] rd_data,
+	output[`DATA_WIDTH-1:0] wrt_data,
 	output we,
         output  req_valid,
 //	input intr,  to be implemented later 
@@ -32,7 +33,7 @@
   // Wires declaration  
   //*********************************************
 wire [`ADDR_WIDTH - 1:0] addr_ifetch,addr_mem;
-wire [`DATA_WIDTH - 1:0] data_inst,data_mem; 
+wire [`DATA_WIDTH - 1:0] data_inst,rd_data_mem,wrt_data_mem; 
 wire [`DATA_WIDTH - 1:0] data_mmu; 
 wire we_ifetch,we_mem;
 wire req_valid_ifetch,req_valid_mem,grant_ifetch,grant_mmu;
@@ -69,6 +70,7 @@ wire stall_fetch, stall_decode,stall_from_exe ,system_flush;
 //branch 
 
 wire branch_taken;
+ (* DONT_TOUCH = "true" *) wire data_valid_mem;
 
 //***********************************************
 
@@ -87,32 +89,29 @@ wire branch_taken;
     .req0_valid(req_valid_ifetch),    // Ifetch req to arbiter 
     .addr_p0(addr_ifetch),            //addr from ifetch 
     .data_p0(data_inst),              // data to ifetch 
-    .we_p0(we_ifetch),                // we to ifetch though not necessary
     .system_flush(system_flush),     // flush the requests in case of the branch taken 
     .system_stall(source_not_ready_wire), // stall excludes stall from exe ,as it is created for mem request 
     .grant0(grant_ifetch),                  // grant from Arbiter 
     .req1_valid(req_valid_mem),                // MMu req to arbiter , currently tied to 0
     .addr_p1(addr_mem),                // addr from mmu
-    .data_p1(data_mem),                //data from mmu
+    .data_p1_rd(rd_data_mem),                //data from mmu
+    .data_p1_wrt(wrt_data_mem),                //data from mmu
     .we_p1(we_mem),                    //we from mmu
     .grant1(grant_mmu),                  //grant from arbiter to mmu
     .req_valid(req_valid),           // req valid to Memory bus 
     .addr(Addr),                     // addr in Memory bus 
-    .data(Data),                     // data in memory bus 
+    .rd_data(rd_data),                     // data in memory bus 
+    .wrt_data(wrt_data),                     // data in memory bus 
     .we(we),                         // we in Memory bus 
-    .data_valid(data_valid)           //data valid from Mem 
+    .data_valid(data_valid) ,          //data valid from Mem 
+    .data_valid_mem(data_valid_mem)  // data valid towards mem
   );
 
 
 
-Fetch #(
-    .MEM_DEPTH(64),        // Set the memory depth
-    .DATA_WIDTH(32)       // Set the data width
-     ) 
-        u_fetch(
+Fetch u_fetch(
     .Addr(addr_ifetch),        // Address output
     .Data(data_inst),        // Data inout
-    .we(we_ifetch),            // Write enable output
     .req_valid(req_valid_ifetch),  // Request valid output
     .clk(clk),                      // Clock input
     .reset(reset),                  // Reset input
@@ -184,8 +183,9 @@ Fetch #(
 
       // Towards the Mem arbiter
      .addr(addr_mem),
-     .data(data_mem),
-     .data_valid(data_valid),
+     .rd_data(rd_data_mem),
+     .wrt_data(wrt_data_mem),
+     .data_valid(data_valid_mem),
      .we(we_mem),
      .req_valid(req_valid_mem),
       . grant(grant_mmu)    
@@ -200,6 +200,7 @@ Fetch #(
     .Rd_decode(rd_wire),                    // Destination register address from decode stage
     .Execution_Result(Execution_Result_wire),      // Execution result input
     .uop_valid_in(uop_valid_wrtbck),                // Reset valid input
+    .Mem_stall(stall_from_exe),
     .clk(clk),                                     // Clock input
     .reset(reset),                                 // Reset input
     .WrtBck_Addr(WrtBck_Addr_wire),                // Write-back address output

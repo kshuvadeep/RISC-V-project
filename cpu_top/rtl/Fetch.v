@@ -6,16 +6,14 @@
 `define RESET 2'b00
 `define TX 2'b01 
 `define WAIT 2'b11
-`define RX 12'b10
+`define RX 2'b10
 
 `include "system_param.vh"
 `include "Macros.vh"
 
- module Fetch #(parameter MEM_DEPTH=16 ,parameter DATA_WIDTH=32 ) 
-   (
+ module Fetch    (
 	output reg[`ADDR_WIDTH -1:0] Addr ,
-	inout[`DATA_WIDTH-1:0] Data,
-	output reg we,
+	input[`DATA_WIDTH-1:0] Data,
         output reg req_valid,
         input grant ,
 
@@ -35,7 +33,7 @@
         );
 
    localparam STATE_WIDTH=2;
-// localparam `ADDR_WIDTH=$clog2(MEM_DEPTH);
+// localparam `ADDR_WIDTH=$clog2(`MEM_DEPTH);
      // top level 
 
      //architectural registers for simple registers  
@@ -62,48 +60,17 @@
       //************************************************************************************
       //  R E S E T    L   O  G  I  C 
       //**********************************************************************************
-     
+    
+     initial begin 
+          InstructionRegister<={`INST_WIDTH{1'b0}};
+             ProgramCounter_previous<={`ADDR_WIDTH{1'b0}};
+              ProgramCounter <={`ADDR_WIDTH{1'b0}};
+            IR_v <=1'b0;
+     end 
+
         
        
 
-     always@(posedge clk or posedge reset)
-     begin
-	    		      
-                      
-	  if(reset )
-	  begin 
-	//  NextState=`RESET;
-          PresentState=`RESET;
-          InstructionRegister<={`INST_WIDTH{1'b0}};
-          ProgramCounter_previous<={`ADDR_WIDTH{1'b0}};
-          ProgramCounter <={`ADDR_WIDTH{1'b0}};
-           
-
-          end
-
-         
-          if(reset )
-          begin 
-             req_valid=1'b0;
-             we = 1'b0;
-             Addr = {`ADDR_WIDTH{1'b0}} ;
-             opcode={`INST_WIDTH{1'b0}};
-            uop_valid_out=1'b0;
-            pc_out={`ADDR_WIDTH{1'b0}};
-
-          end 
-         //only flush the requests , existing branch uop shouldn't be flushed  
-          if(system_flush)
-           begin 
-              req_valid=1'b0;
-             we = 1'b0;
-             Addr = {`ADDR_WIDTH{1'b0}} ;
-         end 
-
-
-	  
-         
-      end //always block  
        // opcode and uop valid sent to the pipeline ent to the pipeline 
 
 
@@ -112,11 +79,22 @@
       //**********************************************************************************
 
 
-        always @(posedge clk or posedge reset  )  
+        always @(posedge clk  )  
         begin
 
               
-	            
+	                    
+	    if(reset )
+	     begin 
+	//  NextState=`RESET;
+             InstructionRegister<={`INST_WIDTH{1'b0}};
+             ProgramCounter_previous<={`ADDR_WIDTH{1'b0}};
+              ProgramCounter <={`ADDR_WIDTH{1'b0}};
+           
+
+          end
+
+   
            // Program Counter update logic 
            //PC is updated only when PresentState is RX 
            // or whenver there is branch taken    
@@ -124,7 +102,7 @@
                   begin 
                   ProgramCounter_previous <= ProgramCounter ;  
                   ProgramCounter<=next_pc;
-                  IR_v <=1'b0;
+                 // IR_v <=1'b0;
                   end
 
             else  if( !system_stall  && !reset && !Mem_stall && !system_flush )  
@@ -133,29 +111,37 @@
 
                  if (NextState == `RX )
                  begin
-                  ProgramCounter_previous <= ProgramCounter ;  
-                  ProgramCounter <= ProgramCounter+4; 
+                     if(Mem_stall)
+                      ProgramCounter <= ProgramCounter_previous;
+                    else begin 
+                      ProgramCounter_previous <= ProgramCounter ;  
+                      ProgramCounter <= ProgramCounter+4; 
+                     end 
 
                     
 
-                //Instruction Register & valid  Update 
+                     //Instruction Register & valid  Update 
                
-                  InstructionRegister<=Data;
-	          IR_v<= !system_stall  ; // in short if system stall don't assert it as valid ,
+                       InstructionRegister<=Data;
+	            //    IR_v<= !system_stall  ; // in short if system stall don't assert it as valid ,
                                          // assert only when it recovers from the stall 
-                  end 
-                 else 
-                  IR_v <=1'b0;
-
+                    end
+ 
+               
 
 
 
                   // Limiting unintended executions of invalid instructions  
 
-                if(ProgramCounter==MEM_DEPTH)
+                     if(ProgramCounter==(`MEM_DEPTH))
 			  ProgramCounter <=0;
-            end 
-        end
+               end  // if branch not taken
+
+                 //refactoring the code for IR_V as we see some synthesis issue
+              
+               IR_v <= branch_taken ? 1'b0 : (( NextState==`RX && !system_stall) ? 1'b1:1'b0 );
+                
+        end  // always clk 
    
 
     
@@ -205,21 +191,25 @@
   
  			    end 
 		     `WAIT :  begin
+                                
+                              if(Extend_wait_state_flopped)
+                               NextState<= `WAIT;
+
+                               else begin 
 
                               if(data_valid && !system_stall && !Mem_stall && !Extend_wait_state_flopped)
 			      NextState <= `RX;
                                else if(Mem_stall)
                                NextState<=`TX;
-                             
-                              if(Extend_wait_state_flopped)
-                               NextState<= `WAIT;
-                            
-                               end 
+                                else 
+                                  NextState <=`WAIT;
+                              end //if else    
+                                
+                                                        
+                                 end 
 
 		    `RX : begin
-                           if(Mem_stall)
-                          	 ProgramCounter <= ProgramCounter_previous;
-                                
+                                                          
                           	 NextState <=`TX;
 		          end 
 
@@ -246,15 +236,33 @@
 
 
 
-           always@(posedge clk)
-            begin 
+           always@(posedge clk )
+           begin 
+
+               
+            if(reset )
+              begin 
+              req_valid <=1'b0;
+              Addr <= {`ADDR_WIDTH{1'b0}} ;
+               opcode <={`INST_WIDTH{1'b0}};
+              uop_valid_out <=1'b0;
+              pc_out <={`ADDR_WIDTH{1'b0}};
+
+            end 
+         //only flush the requests , existing branch uop shouldn't be flushed  
+          if(system_flush)
+           begin 
+              req_valid <=1'b0;
+             Addr = {`ADDR_WIDTH{1'b0}} ;
+         end 
+ 
+              
                 if(IR_v)
                 begin 
-                    opcode=InstructionRegister;
-                    pc_out=ProgramCounter_previous; 
+                    opcode <=InstructionRegister;
+                    pc_out <=ProgramCounter_previous; 
                 end 
               uop_valid_out=IR_v & !Mem_stall & !system_flush;
-              we <=1'b0; //as we never generate write request from fetch unit
 
               
               if(NextState==`TX || NextState==`WAIT )
@@ -284,10 +292,3 @@
    assign system_flush = branch_taken ;
 
 endmodule 
-
-
-
-             
-        	
-
-	 

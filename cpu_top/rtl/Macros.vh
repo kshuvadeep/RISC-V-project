@@ -8,7 +8,7 @@ always @(posedge clk or posedge reset) begin \
 end
 
 `define POS_EDGE_FF_EN(clk,reset,en,din,dout) \
-always @(posedge clk or posedge reset or posedge en ) begin \
+always @(posedge clk or posedge reset  ) begin \
     if (reset) \
         dout <= 0; \
     else \

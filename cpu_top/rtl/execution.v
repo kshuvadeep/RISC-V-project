@@ -63,7 +63,7 @@ module execution(
       output reg [`INST_WIDTH-1:0] instruction_out,
 
       // Towards the Mem arbiter
-      output reg [`ADDR_WIDTH-1:0] addr,
+      output  [`ADDR_WIDTH-1:0] addr,
       inout [`DATA_WIDTH-1:0] data,
       input data_valid ,
       output we,

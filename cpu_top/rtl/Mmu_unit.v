@@ -7,6 +7,11 @@
 `include "system_param.vh"
 `include "Mmu_param.vh"
 `include "Macros.vh" 
+`define RESET 2'b00
+`define TX 2'b01
+`define RX 2'b10
+`define WAIT 2'b11 
+
 
 module Mmu(
   input clk ,
@@ -22,7 +27,8 @@ module Mmu(
   input uop_valid,
   //bus towards Instruction /Data memory arbiter 
   output reg [`ADDR_WIDTH-1:0] addr,
-  inout [`DATA_WIDTH-1:0] data,
+  input [`DATA_WIDTH-1:0] rd_data,
+  output [`DATA_WIDTH-1:0] wrt_data,
   input data_valid ,
   output reg we,
   output reg req_valid ,
@@ -33,7 +39,7 @@ module Mmu(
 );
    localparam STATE_WIDTH=2;
 
-  wire uop_is_mem;
+  (* DONT_TOUCH = "true" *) wire uop_is_mem;
  
    reg[`ADDR_WIDTH-1:0] Mem_Address ,addr_reg;
    reg[STATE_WIDTH-1:0] PresentState , NextState;
@@ -51,38 +57,11 @@ module Mmu(
  //**********************************************************************************
 
      assign uop_is_mem = (uop_is_mem_load | uop_is_mem_store ) & uop_valid;
-   
-    always@(posedge clk or posedge reset)
-     begin
-         if(reset)
-        begin 
-          PresentState <= 0;
-          NextState <= 0;
-         // addr <= 0;
-          we_reg <=0 ;
-          req_valid_reg <=0;
-          mem_result <=0; 
-          mem_op_completed <=0 ;
-          Mem_Address <=0; 
-          addr_reg <=0 ;
-          addr<=0;
-          we<=1'b0;
-          req_valid<=1'b0;
-          
-        end 
- 
-       
-     //   if(uop_is_mem)
-     //   begin 
-     //   Mem_Address <= src1 + immediate ;
-     // //  Mem_Address_alligned <= (Mem_Address >>2) ; 
-     // //  Mem_Address_offset <= (Mem_Address -  Mem_Address_alligned );
-       // end 
-        
-                       
-      end                   
-      
 
+   
+   
+       
+     
     //************************************************************************************
       //TX & RX  S T A T E     M  A  C  H  I  N  E         L   O  G  I  C 
       //**********************************************************************************
@@ -95,7 +74,11 @@ module Mmu(
         begin 
        
  
-        if( !reset)   
+        if( reset)   
+         begin 
+            addr<=0; we <=0 ; req_valid<=0;
+         end 
+         else 
         begin 
 
             if(uop_is_mem)
@@ -107,22 +90,21 @@ module Mmu(
 	    
 	   	    `RESET :  begin
              	             if(reset)
-                             begin 
                               NextState<=`RESET;
-                            end   
+
+                              req_valid<=1'b0;
+                              
+                           end   
                               
                                                               
-		             end
-
+		           
                       `TX:   begin 
                             if(grant) 
                               begin
 			    	NextState <=`WAIT;
-                              //  req_valid <=1'b0;
                               end 
                              else begin
                                 NextState <= `TX;
-                               // req_valid <=1'b1;
                               end 
 
                              addr <= addr_reg;
@@ -149,8 +131,10 @@ module Mmu(
 		    `RX : begin
                            NextState <=`RESET;
                           we <=1'b0;
-		          end 
+                           req_valid<=1'b0;
 
+		          end 
+                          
                 endcase
 
                       
@@ -167,8 +151,18 @@ module Mmu(
  
 
 
-           always@( posedge clk or posedge reset)
-            begin 
+           always@( posedge clk )
+            begin
+              if(reset)
+        begin 
+          we_reg <=0 ;
+          req_valid_reg <=0;
+          mem_op_completed <=0 ;
+          addr_reg <=0 ;
+          write_mem_data <=0;
+          req_valid_reg<=1'b0;
+         end 
+ 
               // load mem request   
               if(uop_is_mem_load & uop_valid )
                begin
@@ -189,7 +183,7 @@ module Mmu(
                  addr_reg <= src1 + immediate;
                  req_valid_reg <=  1'b1;
                  we_reg  <= 1'b1;
-                write_mem_data = write_data ; 
+                write_mem_data <= write_data ; 
                  
                end 
 
@@ -204,7 +198,6 @@ module Mmu(
              mem_op_completed <=1'b0;
              
 
-          end  //always 
 
         
     //    `POS_EDGE_FF(clk,reset,addr_reg,addr) 
@@ -218,18 +211,14 @@ module Mmu(
   // S T A L L        L   O  G  I  C 
   //**********************************************************************************
      
-    always@(posedge clk or posedge reset)
-   begin 
     if(reset)
         mem_stall <= 1'b0; 
     else if( uop_is_mem) 
-    begin 
          mem_stall <=1'b1 ;
-  end   else if( NextState == `RX ) // WE receive the data or acknowledgement at this stage
+    else if( NextState == `RX ) // WE receive the data or acknowledgement at this stage
         mem_stall <= 1'b0 ;
-  end //always block 
 
- 
+ end  
 
   //************************************************************************************
   // L O A D    &      S T O R E         L   O  G  I  C 
@@ -241,29 +230,28 @@ module Mmu(
       if(reset)
        begin 
        write_data <= 0;
-       write_mem_data <= 0; 
        mem_result <=0 ;
       end 
     else begin 
-       if(PresentState==`RX)
+       if(NextState==`RX)
       begin
            
      // L o A D      D E C O D E  L O G I C 
        case(ctrl_mem)
          `CTRL_LB : begin
-                    mem_result <={{(`DATA_WIDTH-8){data[7]}}, data[7:0]};
+                    mem_result <={{(`DATA_WIDTH-8){rd_data[7]}}, rd_data[7:0]};
                     end 
            `CTRL_LH : begin 
-                      mem_result <= {{(`DATA_WIDTH-16){data[15]}},data[15:0]};
+                      mem_result <= {{(`DATA_WIDTH-16){rd_data[15]}},rd_data[15:0]};
                       end 
            `CTRL_LW :begin 
-                      mem_result <= data;
+                      mem_result <= rd_data;
                       end 
            `CTRL_LBU : begin 
-                       mem_result <= {{(`DATA_WIDTH-8){1'b0}},data[7:0]};
+                       mem_result <= {{(`DATA_WIDTH-8){1'b0}},rd_data[7:0]};
                       end 
            `CTRL_LHU : begin 
-                      mem_result <= {{(`DATA_WIDTH-16){1'b0}},data[15:0]};
+                      mem_result <= {{(`DATA_WIDTH-16){1'b0}},rd_data[15:0]};
                       end 
             default : begin 
                       mem_result <= 0;
@@ -280,15 +268,15 @@ module Mmu(
            case(ctrl_mem)
             
          `CTRL_SB : begin
-                    write_data <= {{(`DATA_WIDTH-8){src2[7]}},src2[7:0]};
+                    write_data <= {{(`DATA_WIDTH-8){src2[7]}},src2[7:0]};  // write just the byte
                     end 
          `CTRL_SH :begin 
-                    write_data <= {{(`DATA_WIDTH-8){src2[15]}},src2[15:0]};
+                    write_data <= {{(`DATA_WIDTH-8){src2[15]}},src2[15:0]}; // write half word 
                     end 
  
             
          `CTRL_SW :begin 
-                    write_data <= src2;
+                    write_data <= src2;  // write the full word 
                     end 
            
 	   default : write_data <= 0 ;
@@ -297,7 +285,7 @@ module Mmu(
    end // always block
           // inout logic handling for data bus 
 
-     assign data = we ?  write_mem_data : {`DATA_WIDTH{1'bz}};
+     assign wrt_data = we ?  write_mem_data : {`DATA_WIDTH{1'b0}};
 
     // if there is no write request from MMU unit     
         //     assign data = we ?  write_mem_data : {`DATA_WIDTH{1'bz}};

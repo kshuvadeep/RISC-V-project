@@ -5,6 +5,7 @@
 //Date :24th September 
 
 `include "system_param.vh"
+`include "Macros.vh"
 `define RESET 2'b00
 `define TX 2'b01 
 `define WAIT 2'b11
@@ -15,28 +16,34 @@
 `define REQ1 2'b01
 `define BOTHREQ 2'b11
 
+`define IFETCH 1'b0
+`define MMU 1'b1 
+
 module Arbiter(
     input clk,
     input reset,
     // IFetch interface
     input req0_valid,
     input [`ADDR_WIDTH-1:0] addr_p0,
-    inout [`DATA_WIDTH-1:0] data_p0,
-    input we_p0,
+    output reg [`DATA_WIDTH-1:0] data_p0,
     output reg grant0,
     input system_flush,
     input system_stall , 
     // MMU interface
     input req1_valid,
     input [`ADDR_WIDTH-1:0] addr_p1,
-    inout [`DATA_WIDTH-1:0] data_p1,
+    input [`DATA_WIDTH-1:0] data_p1_wrt,
+    output reg [`DATA_WIDTH-1:0] data_p1_rd,
     input we_p1,
     output reg grant1,
     // CPU top interface or Main memory bus interface
     output reg req_valid,
     output reg [`ADDR_WIDTH-1:0] addr,
     output reg we,
-    inout [`DATA_WIDTH-1:0] data,
+    input [`DATA_WIDTH-1:0] rd_data,
+    output reg [`DATA_WIDTH-1:0] wrt_data,
+    output reg data_valid_mem,
+   
     input data_valid
     
 );
@@ -45,30 +52,30 @@ module Arbiter(
     reg [`DATA_WIDTH-1:0] next_data;
     reg busy, PingPong ;
     reg [`ADDR_WIDTH -1:0] addr_reg;
+    reg current_agent;
+
 
     // State registers
     reg [1:0] PresentState, NextState;
      
      // data registers
     reg[`DATA_WIDTH-1:0] data_p0_reg ,data_p1_reg; 
+    reg [`DATA_WIDTH-1:0] data_p1_wrt_1d;
    wire[1:0] req ={req0_valid,req1_valid};
 
     // Assert that grant0 and grant1 cannot be high at the same time
-    always @(posedge clk) begin
-        if (grant0 && grant1) begin
-            $display("Error: grant0 and grant1 are both asserted at time %0t", $time);
-            $stop; // Stop simulation if this happens
-        end
-    end
+//    always @(posedge clk) begin
+//        if (grant0 && grant1) begin
+//            $display("Error: grant0 and grant1 are both asserted at time %0t", $time);
+//            $stop; // Stop simulation if this happens
+//        end
+//    end
 
     // Priority or grant logic in always comb block 
     always @(*) begin
         if (reset) begin
             grant0 <= 1'b0;
             grant1 <= 1'b0;
-            busy <= 1'b0;
-            PresentState<= 2'b0;
-            NextState<= 2'b0;
             next_data <={`DATA_WIDTH{1'b0}};
            //  PingPong <= 1'b0; 
 
@@ -120,15 +127,15 @@ module Arbiter(
      end //always block  
 
     // State Machine for the data transmission protocol
-    always @(posedge clk or posedge reset) begin
+    always @(posedge clk ) begin
         if (reset || (NextState == `RESET) || system_flush) begin
             PresentState <= `RESET;
-            addr <= {`ADDR_WIDTH{1'b0}};
-            data_p0_reg <= {`DATA_WIDTH{1'b0}};
-            data_p1_reg <= {`DATA_WIDTH{1'b0}};
-            req_valid <= 1'b0;
-            we <= 1'b0;
-            busy <= 1'b0;
+        //    addr <= {`ADDR_WIDTH{1'b0}};
+        //    data_p0_reg <= {`DATA_WIDTH{1'b0}};
+        //    data_p1_reg <= {`DATA_WIDTH{1'b0}};
+        //    req_valid <= 1'b0;
+        //    we <= 1'b0;
+        //    busy <= 1'b0;
         end else begin
            
             // Update state
@@ -142,29 +149,59 @@ module Arbiter(
 
     // Next State logic State machine as a combo circuit
 
-   always@(posedge clk or posedge reset)
+   always@(posedge clk )
    begin 
+
+         if(reset || (NextState == `RESET) || system_flush)
+         begin 
+           addr_reg<=0;
+            we <= 1'b0;
+            
+         end 
+
 
       if (grant0) begin
              addr_reg <= addr_p0;
-             if (we_p0)
-                next_data <= data_p0;
-        end else if (grant1) begin
+        end else if (grant1) 
                  addr_reg <= addr_p1;
-                  if (we_p1)
-                     next_data <= data_p1;
-                 end
 
-          we <= we_p0 & grant0 | we_p1 & grant1 ;
+          we <=  we_p1 & grant1 ;
 
 
      end  //always block 
 
 
  
+   // need to track which agent is using the arbiter currently 
+  always@(posedge clk )
+  begin 
+   if(grant0)
+    current_agent <= `IFETCH ;
+   else if(grant1)
+      current_agent <=`MMU;
+  end 
+
+
 
     always@(*)
        begin
+ 
+
+           
+ 
+
+            if(reset || (NextState == `RESET) || system_flush)
+           begin 
+           addr<=0;
+          // data_p0 <= {`DATA_WIDTH{1'b0}};
+           // data_p1_rd <= {`DATA_WIDTH{1'b0}};
+            req_valid <= 1'b0;
+            busy <= 1'b0;
+            wrt_data <= 0;
+
+         end 
+
+           
 
           if(system_flush)
            NextState <= `RESET ;
@@ -177,14 +214,22 @@ module Arbiter(
                     if (grant0 || grant1) begin
                         NextState <= `TX;
                     end
+                     data_valid_mem <= 1'b0;
+
                 end
 
                 `TX: begin
                     req_valid <= 1'b1;
                      addr <= addr_reg;
                     // MUX for the arbiter input address and data
-                                       NextState <= `RX;
+                     NextState <= `RX;
                     busy <= 1'b1;
+                    data_valid_mem <= 1'b0;
+
+                    
+                    if(we)
+                      wrt_data<=data_p1_wrt_1d; 
+                
                 end
 
                 `RX: begin
@@ -193,11 +238,14 @@ module Arbiter(
                       //  next_data <= data;
                         busy <= 1'b1;
                         // for ifetch unit
-                        if(req0_valid && !we)
-                        data_p0_reg <=data ;
-                       // for MMU unit 
-                        if(req1_valid && !we)
-                        data_p1_reg <=data ;
+                        if(current_agent == `IFETCH  && !we)
+                        data_p0 <=rd_data ;
+                     //   for MMU unit 
+                      if(current_agent == `MMU && !we)
+                        begin
+                         data_p1_rd <=rd_data ;
+                         data_valid_mem <= 1'b1;
+                       end 
                        
                     end
                     else 
@@ -212,6 +260,8 @@ module Arbiter(
                     busy <= 1'b0;
                   //  we <= 1'b0;
                     req_valid<= 1'b0 ;
+                    data_valid_mem <= 1'b0;
+
                 end
 
                 default: NextState <= `RESET; // Default to reset state
@@ -219,17 +269,38 @@ module Arbiter(
 
             
        end 
-    end  //always_comb block 
+    end  //always_comb block
+
+
+//    always@(posedge clk or posedge reset)
+//    begin 
+//      if(reset) begin
+//          data_p1_rd <={`DATA_WIDTH{1'b0}};
+//          data_valid_mem<= 1'b0;
+//        end
+//      else begin
+//        if(NextState ==`TX ) begin
+//            if(current_agent==`IFETCH)
+//                data_p0 <=rd_data ;
+//           else if(current_agent == `MMU)
+//                begin
+//                data_p1_rd <=rd_data;
+//                data_valid_mem<= 1'b1;
+//           end 
+//         end 
+//         else
+//             data_valid_mem <= 1'b0;
+//       end   
+//
+//   end 
 
 
 
+ `POS_EDGE_FF(clk,reset,data_p1_wrt,data_p1_wrt_1d) 
 
 
 
     // Assign the inout data signal
-    assign data = we ? next_data : {`DATA_WIDTH{1'bz}};
-    assign data_p0= we_p0? {`DATA_WIDTH{1'bz}}: data_p0_reg;
-    assign data_p1 = we_p1? {`DATA_WIDTH{1'bz}}: data_p1_reg;
 
 endmodule
 
