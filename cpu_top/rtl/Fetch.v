@@ -105,20 +105,22 @@
                  // IR_v <=1'b0;
                   end
 
-            else  if( !system_stall  && !reset && !Mem_stall && !system_flush )  
+            else  if( !system_stall  && !reset  && !system_flush )  
                    begin 
 
-
-                 if (NextState == `RX )
-                 begin
-                     if(Mem_stall)
+                 if(Mem_stall)
+                    
                       ProgramCounter <= ProgramCounter_previous;
-                    else begin 
+                 else begin
+
+                 if (NextState == `RX  )
+                 begin
+                     
                       ProgramCounter_previous <= ProgramCounter ;  
                       ProgramCounter <= ProgramCounter+4; 
                      end 
 
-                    
+                 end    
 
                      //Instruction Register & valid  Update 
                
@@ -134,8 +136,8 @@
                   // Limiting unintended executions of invalid instructions  
 
                      if(ProgramCounter==(`MEM_DEPTH))
-			  ProgramCounter <=0;
-               end  // if branch not taken
+			             ProgramCounter <=0;
+                // if branch not taken
 
                  //refactoring the code for IR_V as we see some synthesis issue
               
@@ -159,7 +161,8 @@
 
      always@(*)  //always comb 
         begin 
-       
+      
+         NextState =PresentState;   // for the tool to not infer a latch 
  
         if( (!system_stall || branch_taken) & !reset)   
         begin 

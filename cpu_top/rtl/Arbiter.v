@@ -51,7 +51,7 @@ module Arbiter(
     // Intermediate signals
     reg [`DATA_WIDTH-1:0] next_data;
     reg busy, PingPong ;
-    reg [`ADDR_WIDTH -1:0] addr_reg;
+    (* KEEP = "true" *) reg [`ADDR_WIDTH -1:0] addr_reg; // Instruction to synth tool to keep all the bits 
     reg current_agent;
 
 
@@ -188,7 +188,7 @@ module Arbiter(
  
 
            
- 
+            NextState=PresentState ; // to prevent the latch inferance 
 
             if(reset || (NextState == `RESET) || system_flush)
            begin 
@@ -211,9 +211,11 @@ module Arbiter(
 
          case (PresentState)
                 `RESET: begin
-                    if (grant0 || grant1) begin
+                    if (grant0 || grant1)
                         NextState <= `TX;
-                    end
+                    else 
+                        NextState <= `RESET;
+                     
                      data_valid_mem <= 1'b0;
 
                 end
@@ -233,8 +235,10 @@ module Arbiter(
                 end
 
                 `RX: begin
-                    if (data_valid) begin
+                    if (data_valid) 
                         NextState <= `WAIT;
+                      else 
+                         NextState <= `RX;
                       //  next_data <= data;
                         busy <= 1'b1;
                         // for ifetch unit
@@ -248,9 +252,8 @@ module Arbiter(
                        end 
                        
                     end
-                    else 
-                     NextState <=`RX;
-                end
+                   
+               
 
                 `WAIT: begin
                     if (grant0 || grant1) 
