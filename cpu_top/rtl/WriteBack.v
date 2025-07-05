@@ -1,4 +1,4 @@
-//*******************
+////*******************
 // This is the stage where the executed results are sent out to the register files for write 
 // based on their destination registers 
 // date :August 9th , 6:30 pm 
@@ -58,7 +58,7 @@ module WriteBack(
                  begin 
                    WrtBck_Addr <={`REG_ADDR_WIDTH{1'b0}};
                    WrtBck_Data <={`DATA_WIDTH{1'b0}};
-                   Wr_En=1'b0;
+                   Wr_En<=1'b0;
                   end 
                   
                   if(uop_valid_in)

@@ -37,12 +37,13 @@ module soc_tb;
     wire [ADDR_WIDTH-1:0] addr;
     wire req_valid, valid_data, we;
     wire [DATA_WIDTH-1:0] data;
+    wire txd ,rxd ;
 
     // Instantiate the SOC module
     Soc #(MEM_DEPTH,DATA_WIDTH)
     dut (
         .clk(clk),
-        .reset(reset)
+        .reset(reset),
         // Add debug ports if necessary
     );
 
@@ -64,8 +65,8 @@ module soc_tb;
         // Wait for a while
         #100;
 
-	#10000;
-	//$finish; 
+        #10000;
+        //$finish; 
         // End the simulation
       //  $finish;
     end
@@ -81,7 +82,7 @@ module soc_tb;
         $dumpfile("waves.vcd");
         $dumpvars(0, soc_tb);       // Include top-level signals in the testbench module
         $dumpvars(1, soc_tb.dut);   // Include signals in the counter module (uut instance)
-	// $dumpvars(1, testbench.dut); 
+        // $dumpvars(1, testbench.dut); 
     end
 
 

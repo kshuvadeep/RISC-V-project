@@ -53,7 +53,7 @@ module Uart_module(
      
      // `CLK_GATE(clk,wrt_en_tx,wrt_clk_tx)
     always@(*) begin
-     wrt_clk_tx = clk & wrt_en_tx; 
+     wrt_clk_tx =  wrt_en_tx; 
    end 
      // `CLK_GATE(clk,rd_en_tx,rd_clk_tx)
 

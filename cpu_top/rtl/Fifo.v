@@ -54,7 +54,7 @@ module Fifo #(parameter DEPTH= 16, WIDTH=32) (
     end 
 
    
-   assign   full = reset ? 1'b0 :(rd_ptr == wrt_ptr+1); 
+   assign   full = reset ? 1'b0 :(rd_ptr == (wrt_ptr+1)); 
     assign empty = reset ? 1'b1:(rd_ptr ==wrt_ptr);
    
 endmodule 

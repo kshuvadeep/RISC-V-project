@@ -162,7 +162,7 @@
      always@(*)  //always comb 
         begin 
       
-         NextState =PresentState;   // for the tool to not infer a latch 
+        // NextState =PresentState;   // for the tool to not infer a latch 
  
         if( (!system_stall || branch_taken) & !reset)   
         begin 
@@ -256,7 +256,7 @@
           if(system_flush)
            begin 
               req_valid <=1'b0;
-             Addr = {`ADDR_WIDTH{1'b0}} ;
+             Addr <= {`ADDR_WIDTH{1'b0}} ;
          end 
  
               
