@@ -188,7 +188,7 @@ module Arbiter(
  
 
            
-            NextState=PresentState ; // to prevent the latch inferance 
+         //   NextState=PresentState ; // to prevent the latch inferance 
 
             if(reset || (NextState == `RESET) || system_flush)
            begin 

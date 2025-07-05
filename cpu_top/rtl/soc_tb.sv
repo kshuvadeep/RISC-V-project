@@ -43,7 +43,7 @@ module soc_tb;
     Soc #(MEM_DEPTH,DATA_WIDTH)
     dut (
         .clk(clk),
-        .reset(reset),
+        .reset(reset)
         // Add debug ports if necessary
     );
 
