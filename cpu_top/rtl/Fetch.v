@@ -162,7 +162,7 @@
      always@(*)  //always comb 
         begin 
       
-        // NextState =PresentState;   // for the tool to not infer a latch 
+        
  
         if( (!system_stall || branch_taken) & !reset)   
         begin 
@@ -265,7 +265,7 @@
                     opcode <=InstructionRegister;
                     pc_out <=ProgramCounter_previous; 
                 end 
-              uop_valid_out=IR_v & !Mem_stall & !system_flush;
+              uop_valid_out<=IR_v & !Mem_stall & !system_flush;
 
               
               if(NextState==`TX || NextState==`WAIT )

@@ -41,7 +41,7 @@
                 if(reset)
                     begin
 		    data_valid_reg <= 1'b0;
-                    data_reg= {`DATA_WIDTH{1'b0}};                                                      
+                    data_reg<= {`DATA_WIDTH{1'b0}};                                                      
 
 		         end 
                  else begin

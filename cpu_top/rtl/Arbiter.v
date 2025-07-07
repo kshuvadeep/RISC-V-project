@@ -38,7 +38,7 @@ module Arbiter(
     output reg grant1,
     // CPU top interface or Main memory bus interface
     output reg req_valid,
-    output reg [`ADDR_WIDTH-1:0] addr,
+  (* KEEP = "true" *)   output reg [`ADDR_WIDTH-1:0] addr,
     output reg we,
     input [`DATA_WIDTH-1:0] rd_data,
     output reg [`DATA_WIDTH-1:0] wrt_data,
@@ -117,7 +117,7 @@ module Arbiter(
          // Fetched uop has no meaning if the younger instructions are not 
         // executed   
                             grant0 <= 1'b0;
-                           grant1 <= 1'b1;
+                            grant1 <= 1'b1;
 
                        end   
                      
@@ -188,15 +188,14 @@ module Arbiter(
  
 
            
-         //   NextState=PresentState ; // to prevent the latch inferance 
-
-            if(reset || (NextState == `RESET) || system_flush)
+        
+            if(reset ||  system_flush)
            begin 
-           addr<=0;
+           //addr<=0;
           // data_p0 <= {`DATA_WIDTH{1'b0}};
            // data_p1_rd <= {`DATA_WIDTH{1'b0}};
             req_valid <= 1'b0;
-            busy <= 1'b0;
+           // busy <= 1'b0;  #verilator ,removing the combo loop 
             wrt_data <= 0;
 
          end 
@@ -213,10 +212,15 @@ module Arbiter(
                 `RESET: begin
                     if (grant0 || grant1)
                         NextState <= `TX;
-                    else 
+                    else begin  
                         NextState <= `RESET;
-                     
+                          addr<=0;
+                          req_valid<=1'b0;
+                           wrt_data<=1'b0;
+                          end 
                      data_valid_mem <= 1'b0;
+        
+                    
 
                 end
 
@@ -258,8 +262,11 @@ module Arbiter(
                 `WAIT: begin
                     if (grant0 || grant1) 
                         NextState <= `TX;
-                      else 
+                      else begin 
                         NextState <=`RESET;
+                         addr<=0;
+                         wrt_data<=1'b0;
+                      end  
                     busy <= 1'b0;
                   //  we <= 1'b0;
                     req_valid<= 1'b0 ;

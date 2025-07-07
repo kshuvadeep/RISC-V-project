@@ -89,7 +89,7 @@ module Uart_module(
         .txd(txd)
     );
      
-     assign data_valid = csn_uart? (!tx_full ):1'bz; // needs to  modify this for the Receiver module
+     assign data_valid = csn_uart ? (!tx_full ):1'bz; // needs to  modify this for the Receiver module
 
    // since the RX module is not designed yet 
     assign rd_data = csn_uart ? {`DATA_WIDTH{1'b0}} : {`DATA_WIDTH{1'bz}};

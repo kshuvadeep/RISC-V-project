@@ -40,8 +40,8 @@ module soc_tb;
     wire txd ,rxd ;
 
     // Instantiate the SOC module
-    Soc #(MEM_DEPTH,DATA_WIDTH)
-    dut (
+    Soc 
+       dut (
         .clk(clk),
         .reset(reset)
         // Add debug ports if necessary
