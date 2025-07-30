@@ -1,0 +1,11 @@
+Address     Code        Basic                        Line Source
+
+0x00400000  0x10000337  lui x6,0x00010000            2      li t1 ,0x10000000   # first write , t1 holds the address and t2 holds the data 
+0x00400004  0x00030313  addi x6,x6,0                      
+0x00400008  0x00e00393  addi x7,x0,14                3      li t2 , 14   
+0x0040000c  0x00730023  sb x7,0(x6)                  4      sb t2 ,(t1) 
+0x00400010  0x10000e37  lui x28,0x00010000           7      li t3 ,0x10000000   # first write , t1 holds the address and t2 holds the data 
+0x00400014  0x000e0e13  addi x28,x28,0                    
+0x00400018  0x01700393  addi x7,x0,23                8      li t2 , 23   
+0x0040001c  0x007e0023  sb x7,0(x28)                 9      sb t2 ,(t3)   
+0x00400020  0x00030e83  lb x29,0(x6)                 11     lb t4 , (t1)  # load from address 20 

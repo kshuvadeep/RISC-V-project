@@ -1,0 +1,6 @@
+Address     Code        Basic                        Line Source
+
+0x00400000  0x00100313  addi x6,x0,1                 2     li t1 ,1
+0x00400004  0x01f00393  addi x7,x0,31                3     li t2 ,31
+0x00400008  0x00731e33  sll x28,x6,x7                4     sll t3 ,t1 , t2 
+0x0040000c  0x004e5e93  srli x29,x28,4               5     srli t4 ,t3 , 4 

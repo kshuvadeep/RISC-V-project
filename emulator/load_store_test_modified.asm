@@ -9,5 +9,3 @@
   sb t2 ,(t3)   
   
   lb t4 , (t1)  # load from address 20 
-  lb t5 , (t3)  # load from address 24 
-  add t6 ,t4 ,t5 

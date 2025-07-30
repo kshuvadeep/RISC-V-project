@@ -1,0 +1,65 @@
+`include "system_param.vh"
+//***************************************************************
+//  T e s t c a s e : fib series
+//***************************************************************
+
+initial begin 
+// addi x5,x0,1 4 li t0 1
+Mem[0] = 8'h93;
+Mem[1] = 8'h02;
+Mem[2] = 8'h10;
+Mem[3] = 8'h00;
+
+// addi x6,x0,5 6 li t1 ,5
+Mem[4] = 8'h13;
+Mem[5] = 8'h03;
+Mem[6] = 8'h50;
+Mem[7] = 8'h00;
+
+// addi x7,x0,0 9 li t2 , 0
+Mem[8] = 8'h93;
+Mem[9] = 8'h03;
+Mem[10] = 8'h00;
+Mem[11] = 8'h00;
+
+// addi x28,x0,1 12 li t3 ,1
+Mem[12] = 8'h13;
+Mem[13] = 8'h0e;
+Mem[14] = 8'h10;
+Mem[15] = 8'h00;
+
+// add x29,x28,x7 16 LOOP :add t4 ,t3 ,t2
+Mem[16] = 8'hb3;
+Mem[17] = 8'h0e;
+Mem[18] = 8'h7e;
+Mem[19] = 8'h00;
+
+// add x7,x28,x0 18 add t2 , t3 ,zero
+Mem[20] = 8'hb3;
+Mem[21] = 8'h03;
+Mem[22] = 8'h0e;
+Mem[23] = 8'h00;
+
+// add x28,x29,x0 20 add t3 ,t4 ,zero
+Mem[24] = 8'h33;
+Mem[25] = 8'h8e;
+Mem[26] = 8'h0e;
+Mem[27] = 8'h00;
+
+// sub x6,x6,x5 21 sub t1 ,t1 ,t0
+Mem[28] = 8'h33;
+Mem[29] = 8'h03;
+Mem[30] = 8'h53;
+Mem[31] = 8'h40;
+
+// bne x6,x0,0xfffffff0 22 bnez t1 LOOP
+Mem[32] = 8'he3;
+Mem[33] = 8'h18;
+Mem[34] = 8'h03;
+Mem[35] = 8'hfe;
+
+
+for(i=36; i<64; i=i+1) begin
+    Mem[i] = i;  // Fill up to specified depth
+end
+end

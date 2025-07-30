@@ -1,7 +1,9 @@
+`include "system_param.vh"
 //***************************************************************
 //  T e s t c a s e : load store code
 //***************************************************************
 
+initial begin 
 // addi x6,x0,0x00000024 2 li t1 ,36 # first write , t1 holds the address and t2 holds the data
 Mem[0] = 8'h13;
 Mem[1] = 8'h03;
@@ -57,8 +59,7 @@ Mem[34] = 8'hee;
 Mem[35] = 8'h01;
 
 
-for(i=36; i<MEM_DEPTH; i=i+1) begin
-    Mem[i] = i;  // Just for creating a test case
+for(i=36; i<64; i=i+1) begin
+    Mem[i] = i;  // Fill up to specified depth
 end
-
-data_valid_reg = 1'b0;
+end

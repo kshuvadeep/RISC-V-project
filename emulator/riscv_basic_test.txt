@@ -1,0 +1,46 @@
+//***************************************************************
+//  T e s t c a s e : basic test case
+//***************************************************************
+
+// addi x6,x0,10 2 addi t1 ,zero,10
+Mem[0] = 8'h13;
+Mem[1] = 8'h03;
+Mem[2] = 8'ha0;
+Mem[3] = 8'h00;
+
+// addi x7,x0,20 3 addi t2 ,zero, 20
+Mem[4] = 8'h93;
+Mem[5] = 8'h03;
+Mem[6] = 8'h40;
+Mem[7] = 8'h01;
+
+// add x28,x6,x7 4 add t3 t1 t2
+Mem[8] = 8'h33;
+Mem[9] = 8'h0e;
+Mem[10] = 8'h73;
+Mem[11] = 8'h00;
+
+// sub x29,x7,x6 5 sub t4 t2 t1
+Mem[12] = 8'hb3;
+Mem[13] = 8'h8e;
+Mem[14] = 8'h63;
+Mem[15] = 8'h40;
+
+// and x30,x28,x29 6 and t5 t3 t4
+Mem[16] = 8'h33;
+Mem[17] = 8'h7f;
+Mem[18] = 8'hde;
+Mem[19] = 8'h01;
+
+// xor x31,x28,x29 7 xor t6 t3 t4
+Mem[20] = 8'hb3;
+Mem[21] = 8'h4f;
+Mem[22] = 8'hde;
+Mem[23] = 8'h01;
+
+
+for(i=24; i<MEM_DEPTH; i=i+1) begin
+    Mem[i] = i;  // Just for creating a test case
+end
+
+data_valid_reg = 1'b0;
