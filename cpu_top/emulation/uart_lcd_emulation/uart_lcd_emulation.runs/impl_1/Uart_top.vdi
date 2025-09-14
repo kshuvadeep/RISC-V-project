@@ -1,0 +1,97 @@
+#-----------------------------------------------------------
+# Vivado v2024.1 (64-bit)
+# SW Build 5076996 on Wed May 22 18:36:09 MDT 2024
+# IP Build 5075265 on Wed May 22 21:45:21 MDT 2024
+# SharedData Build 5076995 on Wed May 22 18:29:18 MDT 2024
+# Start of session at: Sat Jul 26 20:12:57 2025
+# Process ID: 1817965
+# Current directory: /home/shuvadeep/Documents/Work/RISC_V/cpu_top/emulation/uart_lcd_emulation/uart_lcd_emulation.runs/impl_1
+# Command line: vivado -log Uart_top.vdi -applog -product Vivado -messageDb vivado.pb -mode batch -source Uart_top.tcl -notrace
+# Log file: /home/shuvadeep/Documents/Work/RISC_V/cpu_top/emulation/uart_lcd_emulation/uart_lcd_emulation.runs/impl_1/Uart_top.vdi
+# Journal file: /home/shuvadeep/Documents/Work/RISC_V/cpu_top/emulation/uart_lcd_emulation/uart_lcd_emulation.runs/impl_1/vivado.jou
+# Running On        :shuvadeep-HP-ENVY-x360-2-in-1-Laptop-15-ew0xxx
+# Platform          :Ubuntu
+# Operating System  :Ubuntu 20.04.6 LTS
+# Processor Detail  :12th Gen Intel(R) Core(TM) i7-1255U
+# CPU Frequency     :2599.998 MHz
+# CPU Physical cores:10
+# CPU Logical cores :12
+# Host memory       :16463 MB
+# Swap memory       :2147 MB
+# Total Virtual     :18611 MB
+# Available Virtual :13937 MB
+#-----------------------------------------------------------
+source Uart_top.tcl -notrace
+create_project: Time (s): cpu = 00:00:15 ; elapsed = 00:00:15 . Memory (MB): peak = 1408.664 ; gain = 0.023 ; free physical = 3644 ; free virtual = 12238
+Command: link_design -top Uart_top -part xc7a35tftg256-1
+Design is defaulting to srcset: sources_1
+Design is defaulting to constrset: constrs_1
+INFO: [Device 21-403] Loading part xc7a35tftg256-1
+INFO: [Device 21-9227] Part: xc7a35tftg256-1 does not have CEAM library.
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1703.703 ; gain = 0.000 ; free physical = 3380 ; free virtual = 11959
+INFO: [Netlist 29-17] Analyzing 43 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+INFO: [Project 1-479] Netlist was created with Vivado 2024.1
+INFO: [Project 1-570] Preparing netlist for logic optimization
+Parsing XDC File [/home/shuvadeep/Documents/Work/RISC_V/cpu_top/emulation/uart_lcd_emulation/uart_lcd_emulation.srcs/constrs_1/imports/Uart/LCD.xdc]
+Finished Parsing XDC File [/home/shuvadeep/Documents/Work/RISC_V/cpu_top/emulation/uart_lcd_emulation/uart_lcd_emulation.srcs/constrs_1/imports/Uart/LCD.xdc]
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.01 . Memory (MB): peak = 1917.262 ; gain = 0.000 ; free physical = 3214 ; free virtual = 11765
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 3 instances were transformed.
+  RAM32M => RAM32M (RAMD32(x6), RAMS32(x2)): 1 instance 
+  RAM32X1D => RAM32X1D (RAMD32(x2)): 2 instances
+
+8 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
+link_design completed successfully
+link_design: Time (s): cpu = 00:00:09 ; elapsed = 00:00:09 . Memory (MB): peak = 1917.262 ; gain = 508.598 ; free physical = 3214 ; free virtual = 11765
+Command: opt_design
+Attempting to get a license for feature 'Implementation' and/or device 'xc7a35t'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7a35t'
+Running DRC as a precondition to command opt_design
+
+Starting DRC Task
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Project 1-461] DRC finished with 0 Errors
+INFO: [Project 1-462] Please refer to the DRC report (report_drc) for more information.
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:01 . Memory (MB): peak = 2013.012 ; gain = 95.750 ; free physical = 3135 ; free virtual = 11684
+
+Starting Cache Timing Information Task
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Ending Cache Timing Information Task | Checksum: 256c7eb1d
+
+Time (s): cpu = 00:00:12 ; elapsed = 00:00:12 . Memory (MB): peak = 2473.793 ; gain = 460.781 ; free physical = 2696 ; free virtual = 11244
+
+Starting Logic Optimization Task
+
+Phase 1 Initialization
+
+Phase 1.1 Core Generation And Design Setup
+
+Phase 1.1.1 Generate And Synthesize Debug Cores
+INFO: [Chipscope 16-329] Generating Script for core instance : dbg_hub 
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1704] No user IP repositories specified
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/tools/Xilinx/Vivado/2024.1/data/ip'.
+INFO: [IP_Flow 19-3806] Processing IP xilinx.com:ip:xsdbm:3.0 for cell dbg_hub_CV.
+INFO: [Chipscope 16-329] Generating Script for core instance : u_ila_0 
+INFO: [IP_Flow 19-3806] Processing IP xilinx.com:ip:ila:6.2 for cell u_ila_0_CV.
+INFO: [Chipscope 16-469] Using cached IP synthesis design for IP xilinx.com:ip:xsdbm:3.0, cache-ID = dc3611cd7acacc35.
+ERROR: [Chipscope 16-331] dcp file did not get generated for instname : u_ila_0 
+ERROR: [Chipscope 16-330] Synthesis of Debug Cores has failed 
+ERROR: [Chipscope 16-578] Check "/home/shuvadeep/Documents/Work/RISC_V/cpu_top/emulation/uart_lcd_emulation/uart_lcd_emulation.runs/impl_1/.Xil/Vivado-1817965-shuvadeep-HP-ENVY-x360-2-in-1-Laptop-15-ew0xxx/dc_drv.0/vivado.log" file for more details.
+Phase 1.1.1 Generate And Synthesize Debug Cores | Checksum: 256c7eb1d
+
+Time (s): cpu = 00:00:24 ; elapsed = 00:00:23 . Memory (MB): peak = 2788.598 ; gain = 0.000 ; free physical = 2303 ; free virtual = 10914
+Phase 1.1 Core Generation And Design Setup | Checksum: 256c7eb1d
+
+Time (s): cpu = 00:00:24 ; elapsed = 00:00:23 . Memory (MB): peak = 2788.598 ; gain = 0.000 ; free physical = 2303 ; free virtual = 10914
+Phase 1 Initialization | Checksum: 256c7eb1d
+
+Time (s): cpu = 00:00:24 ; elapsed = 00:00:23 . Memory (MB): peak = 2788.598 ; gain = 0.000 ; free physical = 2303 ; free virtual = 10914
+INFO: [Common 17-83] Releasing license: Implementation
+22 Infos, 0 Warnings, 0 Critical Warnings and 4 Errors encountered.
+opt_design failed
+ERROR: [Chipscope 16-338] Implementing debug Cores failed due to earlier errors
+INFO: [Common 17-206] Exiting Vivado at Sat Jul 26 20:14:06 2025...

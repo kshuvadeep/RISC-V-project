@@ -25,8 +25,10 @@ add_files  /home/shuvadeep/Documents/Work/RISC_V/cpu_top/rtl/latest_rtl//sign_ex
 add_files  /home/shuvadeep/Documents/Work/RISC_V/cpu_top/rtl/latest_rtl//Arbiter.v
 add_files  /home/shuvadeep/Documents/Work/RISC_V/cpu_top/rtl/latest_rtl//Mmu_unit.v
 add_files  /home/shuvadeep/Documents/Work/RISC_V/cpu_top/rtl/latest_rtl//Mmu_param.vh
-add_files  /home/shuvadeep/Documents/Work/RISC_V/cpu_top/rtl/latest_rtl//Uart_module.v
+add_files  /home/shuvadeep/Documents/Work/RISC_V/cpu_top/rtl/latest_rtl//Uart_module_latest.v
 add_files  /home/shuvadeep/Documents/Work/RISC_V/cpu_top/rtl/latest_rtl//Uart_tx.v
+add_files  /home/shuvadeep/Documents/Work/RISC_V/cpu_top/rtl/latest_rtl//Uart_rx.v
+add_files  /home/shuvadeep/Documents/Work/RISC_V/cpu_top/rtl/latest_rtl//lcd_driver.v
 add_files  /home/shuvadeep/Documents/Work/RISC_V/cpu_top/rtl/latest_rtl//Fifo.v
 
 
