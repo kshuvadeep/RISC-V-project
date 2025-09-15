@@ -1,0 +1,2 @@
+export PATH=/opt/verilator-5/bin:$PATH
+source venv/bin/activate

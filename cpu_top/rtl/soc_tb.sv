@@ -43,33 +43,35 @@ module soc_tb;
     Soc 
        dut (
         .clk(clk),
-        .reset(reset)
+        .reset(reset),
+         .txd(txd),
+         .rxd(rxd)
         // Add debug ports if necessary
     );
 
     // Clock generation
-    always #10 clk = ~clk;
+  //  always #10 clk = ~clk;
 
-    initial begin
-        // Initialize signals
-        clk = 0;
-        reset = 1;
+  //  initial begin
+  //      // Initialize signals
+  //      clk = 0;
+  //      reset = 1;
 
-        // Apply reset
-        #50;
-        reset = 0;
+  //      // Apply reset
+  //      #50;
+  //      reset = 0;
 
-        // Stimulus to the SOC module
-        // Add stimulus code here, e.g., setting req_valid, we, addr, and data
+  //      // Stimulus to the SOC module
+  //      // Add stimulus code here, e.g., setting req_valid, we, addr, and data
 
-        // Wait for a while
-        #100;
+  //      // Wait for a while
+  //      #100;
 
-        #10000;
-        //$finish; 
-        // End the simulation
-      //  $finish;
-    end
+  //      #10000;
+  //      //$finish; 
+  //      // End the simulation
+  //    //  $finish;
+  //  end
 
     initial begin
         // Monitoring signals
