@@ -1,34 +1,35 @@
-// This module acts as an arbiter between instruction fetch & data fetch unit 
-// it's a simple priority encoder logic giving priority to instructions for obvious reasosns 
-// Author: Shuvadeep Kumar 
-// Company Name : auToRIsca 
-//Date :24th September 
+// This module acts as an arbiter between instruction fetch & data fetch unit
+// it's a simple priority encoder logic giving priority to instructions for obvious reasosns
+// Author: Shuvadeep Kumar
+// Company Name : auToRIsca
+//Date :24th September
 
 `include "system_param.vh"
 `include "Macros.vh"
 `define RESET 2'b00
-`define TX 2'b01 
+`define TX 2'b01
 `define WAIT 2'b11
 `define RX 2'b10   // Fixed RX size
 
-`define NOREQ 2'b00 
+`define NOREQ 2'b00
 `define REQ0 2'b10
 `define REQ1 2'b01
 `define BOTHREQ 2'b11
 
 `define IFETCH 1'b0
-`define MMU 1'b1 
+`define MMU 1'b1
 
 module Arbiter(
     input clk,
     input reset,
+    input programming,
     // IFetch interface
     input req0_valid,
     input [`ADDR_WIDTH-1:0] addr_p0,
     output reg [`DATA_WIDTH-1:0] data_p0,
     output reg grant0,
     input system_flush,
-    input system_stall , 
+    input system_stall ,
     // MMU interface
     input req1_valid,
     input [`ADDR_WIDTH-1:0] addr_p1,
@@ -37,29 +38,30 @@ module Arbiter(
     input we_p1,
     output reg grant1,
     // CPU top interface or Main memory bus interface
-    output reg req_valid,
-  (* KEEP = "true" *)   output reg [`ADDR_WIDTH-1:0] addr,
-    output reg we,
+    output reg req_valid_o,
+  (* KEEP = "true" *)   output reg [`ADDR_WIDTH-1:0] addr_o,
+    output reg we_o,
     input [`DATA_WIDTH-1:0] rd_data,
-    output reg [`DATA_WIDTH-1:0] wrt_data,
+    output reg [`DATA_WIDTH-1:0] wrt_data_o,
     output reg data_valid_mem,
-   
+
     input data_valid
-    
+
 );
 
     // Intermediate signals
-    reg [`DATA_WIDTH-1:0] next_data;
+    reg [`DATA_WIDTH-1:0] next_data, wrt_data;
     reg busy, PingPong ;
-    (* KEEP = "true" *) reg [`ADDR_WIDTH -1:0] addr_reg; // Instruction to synth tool to keep all the bits 
+    (* KEEP = "true" *) reg [`ADDR_WIDTH -1:0] addr_reg; // Instruction to synth tool to keep all the bits
     reg current_agent;
-
+    reg req_valid,we;
+    reg [`ADDR_WIDTH-1:0] addr;
 
     // State registers
     reg [1:0] PresentState, NextState;
-     
+
      // data registers
-    reg[`DATA_WIDTH-1:0] data_p0_reg ,data_p1_reg; 
+    reg[`DATA_WIDTH-1:0] data_p0_reg ,data_p1_reg;
     reg [`DATA_WIDTH-1:0] data_p1_wrt_1d;
    wire[1:0] req ={req0_valid,req1_valid};
 
@@ -71,60 +73,60 @@ module Arbiter(
 //        end
 //    end
 
-    // Priority or grant logic in always comb block 
+    // Priority or grant logic in always comb block
     always @(*) begin
         if (reset) begin
             grant0 <= 1'b0;
             grant1 <= 1'b0;
             next_data <={`DATA_WIDTH{1'b0}};
-           //  PingPong <= 1'b0; 
+           //  PingPong <= 1'b0;
 
         end else begin
-               
+
              if(busy)
-               begin 
+               begin
                   grant0 <=1'b0;
                   grant1 <= 1'b0;
-                end 
-               else 
-               begin 
+                end
+               else
+               begin
                case (req )
-               
-                `NOREQ : begin 
+
+                `NOREQ : begin
                           grant0 <= 1'b0;
                           grant1 <= 1'b0;
-                         end 
-               `REQ0 : begin 
+                         end
+               `REQ0 : begin
                       	   grant0 <= 1'b1;
                            grant1 <= 1'b0;
-                       end 
+                       end
                `REQ1: begin
                       	   grant0 <= 1'b0;
                            grant1 <= 1'b1;
- 
-                      end 
-              `BOTHREQ :begin 
-                        // PingPong <= ~PingPong ; 
-         // a simple Ping pong Arbitration scheme , that can be easily scaled  
+
+                      end
+              `BOTHREQ :begin
+                        // PingPong <= ~PingPong ;
+         // a simple Ping pong Arbitration scheme , that can be easily scaled
                         //  if(PingPong)
-                        //   begin  
+                        //   begin
                       	//   grant0 <= 1'b1;
                         //   grant1 <= 1'b0;
                         //   end
 
-          // since it's a data dependent machine i.e a simple 
+          // since it's a data dependent machine i.e a simple
           // in order machine , data should be our first priority
-         // Fetched uop has no meaning if the younger instructions are not 
-        // executed   
+         // Fetched uop has no meaning if the younger instructions are not
+        // executed
                             grant0 <= 1'b0;
                             grant1 <= 1'b1;
 
-                       end   
-                     
-               endcase 
-            end 
-       end  
-     end //always block  
+                       end
+
+               endcase
+            end
+       end
+     end //always block
 
     // State Machine for the data transmission protocol
     always @(posedge clk ) begin
@@ -137,90 +139,90 @@ module Arbiter(
         //    we <= 1'b0;
         //    busy <= 1'b0;
         end else begin
-           
+
             // Update state
             if(!system_stall )
             PresentState <= NextState;
-          // if NextState is reset , deassert the Mem request 
+          // if NextState is reset , deassert the Mem request
 
-         
+
         end
     end
 
     // Next State logic State machine as a combo circuit
 
    always@(posedge clk )
-   begin 
+   begin
 
          if(reset || (NextState == `RESET) || system_flush)
-         begin 
+         begin
            addr_reg<=0;
             we <= 1'b0;
-            
-         end 
+
+         end
 
 
       if (grant0) begin
              addr_reg <= addr_p0;
-        end else if (grant1) 
+        end else if (grant1)
                  addr_reg <= addr_p1;
 
           we <=  we_p1 & grant1 ;
 
 
-     end  //always block 
+     end  //always block
 
 
- 
-   // need to track which agent is using the arbiter currently 
+
+   // need to track which agent is using the arbiter currently
   always@(posedge clk )
-  begin 
+  begin
    if(grant0)
     current_agent <= `IFETCH ;
    else if(grant1)
       current_agent <=`MMU;
-  end 
+  end
 
 
 
     always@(*)
        begin
- 
 
-           
-        
+
+
+
             if(reset ||  system_flush)
-           begin 
+           begin
            //addr<=0;
           // data_p0 <= {`DATA_WIDTH{1'b0}};
            // data_p1_rd <= {`DATA_WIDTH{1'b0}};
             req_valid <= 1'b0;
-           // busy <= 1'b0;  #verilator ,removing the combo loop 
+           // busy <= 1'b0;  #verilator ,removing the combo loop
             wrt_data <= 0;
 
-         end 
+         end
 
-           
+
 
           if(system_flush)
            NextState <= `RESET ;
 
-             
-         else begin  
+
+         else begin
 
          case (PresentState)
                 `RESET: begin
                     if (grant0 || grant1)
                         NextState <= `TX;
-                    else begin  
+                    else begin
                         NextState <= `RESET;
                           addr<=0;
                           req_valid<=1'b0;
                            wrt_data<=1'b0;
-                          end 
+                          end
                      data_valid_mem <= 1'b0;
-        
-                    
+
+
 
                 end
 
@@ -232,41 +234,41 @@ module Arbiter(
                     busy <= 1'b1;
                     data_valid_mem <= 1'b0;
 
-                    
+
                     if(we)
-                      wrt_data<=data_p1_wrt_1d; 
-                
+                      wrt_data<=data_p1_wrt_1d;
+
                 end
 
                 `RX: begin
-                    if (data_valid) 
+                    if (data_valid)
                         NextState <= `WAIT;
-                      else 
+                      else
                          NextState <= `RX;
                       //  next_data <= data;
                         busy <= 1'b1;
                         // for ifetch unit
                         if(current_agent == `IFETCH  && !we)
                         data_p0 <=rd_data ;
-                     //   for MMU unit 
+                     //   for MMU unit
                       if(current_agent == `MMU && !we)
                         begin
                          data_p1_rd <=rd_data ;
                          data_valid_mem <= 1'b1;
-                       end 
-                       
+                       end
+
                     end
-                   
-               
+
+
 
                 `WAIT: begin
-                    if (grant0 || grant1) 
+                    if (grant0 || grant1)
                         NextState <= `TX;
-                      else begin 
+                      else begin
                         NextState <=`RESET;
                          addr<=0;
                          wrt_data<=1'b0;
-                      end  
+                      end
                     busy <= 1'b0;
                   //  we <= 1'b0;
                     req_valid<= 1'b0 ;
@@ -277,13 +279,13 @@ module Arbiter(
                 default: NextState <= `RESET; // Default to reset state
             endcase
 
-            
-       end 
+
+       end
     end  //always_comb block
 
 
 //    always@(posedge clk or posedge reset)
-//    begin 
+//    begin
 //      if(reset) begin
 //          data_p1_rd <={`DATA_WIDTH{1'b0}};
 //          data_valid_mem<= 1'b0;
@@ -296,19 +298,23 @@ module Arbiter(
 //                begin
 //                data_p1_rd <=rd_data;
 //                data_valid_mem<= 1'b1;
-//           end 
-//         end 
+//           end
+//         end
 //         else
 //             data_valid_mem <= 1'b0;
-//       end   
+//       end
 //
-//   end 
+//   end
 
 
 
- `POS_EDGE_FF(clk,reset,data_p1_wrt,data_p1_wrt_1d) 
+ `POS_EDGE_FF(clk,reset,data_p1_wrt,data_p1_wrt_1d)
+ `POS_EDGE_FF(clk,reset,NextState,PresentState)
 
-
+  assign req_valid_o   = programming ? 1'bz: req_valid;
+  assign we_o          = programming ? 1'bz: we;
+  assign wrt_data_o    = programming ? {`DATA_WIDTH{1'bz}}: wrt_data;
+  assign addr_o         =programming ? {`ADDR_WIDTH{1'bz}}: addr;
 
     // Assign the inout data signal
 
